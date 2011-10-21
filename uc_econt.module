@@ -1,0 +1,971 @@
+<?php
+/**
+ * @file
+ * ECONT shipping module main file.
+ */
+
+function uc_econt_init() {
+  drupal_add_css(drupal_get_path('module', 'uc_econt') .'/uc_econt.css');
+}
+
+/**
+ * Implementation of hook_form_alter().
+ * 
+ */
+
+function uc_econt_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+  $uid = $user->uid;
+  
+  switch ($form_id) {
+
+    case 'uc_cart_checkout_form':
+      drupal_set_message(_econt_messages());
+      
+      $cart_items = uc_cart_get_contents();
+      $car_total = 0;
+      if (!empty($cart_items)) {
+        foreach ($cart_items as $c_item) {
+          $cart_total += ($c_item->price) * $c_item->qty;
+        }
+      }
+      
+      drupal_add_js(drupal_get_path('module', 'uc_econt') .'/uc_econt.js');
+      $store_addr = (array) variable_get('uc_quote_store_default_address', new stdClass());
+      //remove select saved addresses
+      //unset($form['panes']['delivery']['delivery_address_select']);
+      unset($form['panes']['delivery']['delivery_last_name']);
+      unset($form['panes']['delivery']['delivery_zone']);
+     
+      $prefered_time_type = array(t('none'), t('before'), t('in'), t('after'));
+      $shipping_to_type = array(t('door'), t('office'));
+      if (date('N', time()) == 5) {
+        $pdate_sat = date('Y-m-d', strtotime('+1 day', time()));
+        $pdate_day_sat = date('d.m.Y', strtotime('+1 day', time())) . ', ' . t('@date1', array('@date1' => date('l', strtotime('+1 day', time()))));
+        $pdate_mon = date('Y-m-d', strtotime('+3 day', time()));
+        $pdate_day_mon = date('d.m.Y', strtotime('+3 day', time())) . ', ' . t('@date2', array('@date2' => date('l', strtotime('+3 day', time()))));
+        $prefered_date_priority = array($pdate_sat => $pdate_day_sat, $pdate_mon => $pdate_day_mon);
+      }
+      $city_express = array(t('none'), t('to 60 min. (Е1)'), t('to 90 min. (Е2)'), t('to 120 min. (Е3)'));
+      $delivery_to_office = array(0 => '');
+      
+      $e_plug_link_href = 'http://plugins.econt.com/index.php/map_locator/index/F4F4F4/333333/0297D9/FFFFFF/1/900/450/1/999999/1/0297D9/FFFFFF/F4F4F4/FFFFFF/333333/bg';
+      $e_plug_link = '<a class="e-plug" href="' . $e_plug_link_href . '">' . t('Office locator') . '</a>';
+      
+      $form['panes']['delivery']['delivery_first_name']['#weight'] = 1;
+      if(variable_get('uc_field_company', '') != '') {
+        $form['panes']['delivery']['delivery_company']['#weight'] = 2;
+      }
+      if(variable_get('uc_field_country', '') != '') {
+        $form['panes']['delivery']['delivery_country']['#weight'] = 3;
+      }
+      $form['panes']['delivery']['delivery_city']['#weight'] = 4;
+      $form['panes']['delivery']['delivery_postal_code']['#weight'] = 5;
+      $form['panes']['delivery']['delivery_street1']['#weight'] = 6;
+      $form['panes']['delivery']['delivery_street2']['#weight'] = 8;
+      $form['panes']['delivery']['delivery_phone']['#weight'] = 9;
+      
+      $form['panes']['delivery']['delivery_first_name']['#title'] = t('Full name');
+      
+      $form['panes']['delivery']['delivery_city']['#autocomplete_path'] = 'city/autocomplete';
+      $form['panes']['delivery']['delivery_city']['#suffix'] = '<span class="post_codes""></span>';
+      
+      $form['panes']['delivery']['delivery_street1']['#autocomplete_path'] = 'street/autocomplete';
+      $form['panes']['delivery']['delivery_street1']['#description'] = t('Separate housing complex and street if exist with a comma (,)');
+      $form['panes']['delivery']['delivery_street2']['#title'] = t('Street2 title');
+      
+      $form['panes']['delivery']['delivery_street2']['#description'] = t('Separate two or more elements with a comma (,)');
+      $form['panes']['delivery']['delivery_phone']['#description'] = t('Phone format 08XXXXXXXX');
+      
+      $form['panes']['quotes']['#description'] = t('The delivery price is automatically generated when you enter your address. It must be recalculated when you change the Preferred delivery options with this button.');
+      
+      $form['panes']['delivery']['delivery_str_other'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Street other'),
+        '#default_value' => $form_state['values']['delivery_str_other'],
+        '#description' => t('Other details of the address.'),
+        '#size' => 32,
+        '#weight' => 12,
+      );
+      
+      //customer prefered options
+      $form['panes']['delivery']['pref_opts'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Econt Prefered delivery options'),
+        '#description' => t('Prefered options for delivery.'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+      //show declared value if enable and order total is less than setting value
+      if (variable_get('uc_econt_extra_declared_value', '1') > '1' && $cart_total < '10000') {
+        
+        $form['panes']['delivery']['pref_opts']['delivery_declared_value'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Declared value'),
+          '#default_value' => $form_state['values']['delivery_declared_value'] ? $form_state['values']['delivery_declared_value'] : variable_get('uc_econt_extra_declared_value', '1'),
+          '#description' => t('Includes insurance.'),
+          '#weight' => '8',
+        );
+        
+        //auto enable declared value for order total is great than setting value and less than 10000
+        if ($cart_total > variable_get('uc_econt_auto_declared_value', '')) {
+          $form['panes']['delivery']['pref_opts']['delivery_declared_value']['#attributes'] = array('disabled' => 'disabled');
+        }
+      }
+      $form['panes']['delivery']['pref_opts']['delivery_econt_shipping_to'] = array(
+        '#type' => 'select',
+        '#title' => t('Delivery to'),
+        '#options' => $shipping_to_type,
+        '#default_value' => '0',
+        '#required' => TRUE,
+        '#weight' => '9',
+        '#suffix' => '<span class="office-locator">' . $e_plug_link . '</span><div class="offices"></div><div class="clearfix"></div>',
+      );
+      //show this field on friday only, if enabled
+      if (variable_get('uc_econt_extra_date_priority', '1') == '1' && date('N', time()) == 5) {
+        $form['panes']['delivery']['pref_opts']['prefered_delivery_day'] = array(
+          '#type' => 'select',
+          '#title' => t('Delivery day'),
+          '#options' => $prefered_date_priority,
+          '#default_value' => $pdate,
+          '#description' => t('When delivered on Saturday Preferred time options are required.'),
+          '#weight' => '11',
+        );
+      }
+      if (variable_get('uc_econt_extra_time_priority', '1') == '1' || date('N', time()) == 5) {
+        $form['panes']['delivery']['pref_opts']['delivery_prefered_time_type'] = array(
+          '#type' => 'select',
+          '#title' => t('Prefered time type'),
+          '#options' => $prefered_time_type,
+          '#default_value' => $form_state['values']['delivery_prefered_time_type'] ? $form_state['values']['delivery_prefered_time_type'] : '0',
+          '#description' => t('Preferred time type for receipt of delivery.'),
+          '#weight' => '12',
+        );
+        $form['panes']['delivery']['pref_opts']['delivery_prefered_time_value'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Prefered time'),
+          '#description' => t('Preferred time value for receipt of delivery. Example: 14:30'),
+          '#size' => '10',
+          '#weight' => '13',
+        );
+      }
+      //city express and intercity express delivery
+      if (variable_get('uc_econt_extra_city_express', '1') == '1') {
+        $form['panes']['delivery']['pref_opts']['delivery_city_express'] = array(
+          '#type' => 'select',
+          '#title' => t('City express'),
+          '#description' => t('Express services are only for delivery from door to door.'),
+          '#options' => $city_express,
+          '#default_value' => $form_state['values']['delivery_city_express'] ? $form_state['values']['delivery_city_express'] : '0',
+          '#weight' => '14',
+        );
+        //
+        $form['panes']['delivery']['pref_opts']['delivery_intercity_express'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Intercity express'),
+          '#description' => t('Express services are only for delivery from door to door.'),
+          '#default_value' => '0',
+          '#value' => '0',
+          '#weight' => '15',
+        );
+        
+        $form['panes']['delivery']['pref_opts']['more_info'] = array(
+          '#type' => 'item',
+          '#title' => t('More info'),
+          '#description' => t('More info about express services on <a href="@url" target="_blank">Econt site</a>', array('@url' => url('http://www.econt.com/tariff-parcel/'))),
+    '#weight' => '16',
+        );
+      }
+      
+      $form['#validate'][] = 'ucecontshipping_validate_handler';
+      $form['#submit'][] = 'ucecontshipping_submit_handler';
+      
+      break;
+    
+    case 'uc_quote_admin_settings':
+      
+      $form['default_address']['street1']['#description'] = t('Separate two or more elements with a comma (,)');
+      
+      $form['default_address']['str_other'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Street other'),
+        '#default_value' => variable_get('uc_econt_store_addr_str_other', ''),
+        '#description' => t('Other details of the address.'),
+      );
+      
+      $form['#submit'][] = 'ucecontstoreaddr_submit_handler';
+  }
+}
+
+function ucecontstoreaddr_submit_handler($form, $form_state) {
+  if ($form_state['values']['str_other']) {
+    variable_set('uc_econt_store_addr_str_other', $form_state['values']['str_other']);
+    
+    $street1_arr = explode(',', $form_state['values']['street1']);
+    
+  }
+}
+
+function ucecontstoreaddr_validate_handler($form, $form_state) {
+  
+  if ($form_state['values']['panes']['delivery']['delivery_first_name'] == '') {
+    form_set_error('[panes][delivery][delivery_first_name]', t('Full name is empty. Please enter the full name of the recipient.'));
+  }
+}
+
+function ucecontshipping_validate_handler(&$form, $form_state) {
+
+  if ($form_state['values']['panes']['delivery']['delivery_first_name'] == '') {
+    form_set_error('[panes][delivery][delivery_first_name]', t('Full name is empty. Please enter the full name of the recipient.'));
+  }
+}
+
+function ucecontshipping_submit_handler(&$form, $form_state) {
+
+  $order_id = intval($_SESSION['cart_order']);
+  $validate = '1';
+  $only_calculate = '1';
+  $pay_delivery_side = $_SESSION['pay_delivery_side'];
+  $delivery_payment_method = $_SESSION['delivery_payment_method'];
+  $tariff_code = $_SESSION['tariff_code'];
+  $tariff_subcode = $_SESSION['tariff_subcode'];
+  $sms_notification = variable_get('uc_econt_sms_notification', '1');
+  $declared_value = $_SESSION['declared_value'];
+  $shipping_from = variable_get('uc_econt_send_delivery_from', '1');
+  $shipping_to = $_SESSION['econt_shipping_to'];
+  $selected_office = $_SESSION['selected_office'];
+  $delivery_date = $_SESSION['delivery_date'];
+  $service_e = $_SESSION['service_e'];
+  $service_e1 = $_SESSION['service_e1'];
+  $service_e2 = $_SESSION['service_e2'];
+  $service_e3 = $_SESSION['service_e3'];
+  $prefered_time_type = $_SESSION['prefered_time_type'];
+  $prefered_time_value = $_SESSION['prefered_time_value'];
+  $city_express = $_SESSION['city_express'];
+  $delivery_price = $_SESSION['delivery_price'];
+  $cod_tax = $_SESSION['cod_tax'];
+  
+  $total_delivery_price = $_SESSION['delivery_price'];
+  $currency = $_SESSION['currency'];
+
+  $delivery_str_other = $form_state['values']['panes']['delivery']['delivery_str_other'];
+
+  db_query("UPDATE {uc_econt_shipping} SET delivery_str_other = '%s' WHERE order_id = '%s'", $delivery_str_other, $order_id);
+
+  $order_exist = db_result(db_query("SELECT order_id FROM {uc_econt_shipping} WHERE order_id = '%d'", $order_id));
+
+  if ($order_exist) {
+    db_query("UPDATE {uc_econt_shipping} SET
+             pay_delivery_side = '%s',
+             delivery_payment_method = '%s',
+             tariff_code = '%s',
+             tariff_subcode = '%s',
+             declared_value = '%s',
+             shipping_to = '%s',
+             selected_office = '%s',
+             delivery_date = '%s',
+             service_e = '%s',
+             service_e1 = '%s',
+             service_e2 = '%s',
+             service_e3 = '%s',
+             prefered_time_type = '%s',
+             prefered_time_value = '%s',
+             city_express = '%d',
+             delivery_price = '%s',
+             cod_tax = '%s',
+             loading_id = '%s',
+             loading_num = '%s',
+             currency = '%s'  WHERE order_id = %d",
+             $pay_delivery_side,
+             $delivery_payment_method,
+             $tariff_code,
+             $tariff_subcode,
+             $declared_value,
+             $shipping_to,
+             $selected_office,
+             $delivery_date,
+             $service_e,
+             $service_e1,
+             $service_e2,
+             $service_e3,
+             $prefered_time_type,
+             $prefered_time_value,
+             $city_express,
+             $delivery_price,
+             $cod_tax,
+             $loading_id,
+             $loading_num,
+             $currency,
+             $order_id);
+  }
+  else {
+    db_query("INSERT INTO {uc_econt_shipping} (order_id, pay_delivery_side, delivery_payment_method, tariff_code, tariff_subcode, declared_value, shipping_to, selected_office, delivery_date, service_e, service_e1, service_e2, service_e3, prefered_time_type, prefered_time_value, city_express, delivery_price, cod_tax, loading_id, loading_num, currency)
+            VALUES ('%d', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',  '%s', '%d', '%s', '%s', '%s', '%s', '%s')",
+            $order_id, $pay_delivery_side, $delivery_payment_method, $tariff_code, $tariff_subcode, $declared_value, $shipping_to, $selected_office, $delivery_date, $service_e, $service_e1, $service_e2, $service_e3, $prefered_time_type, $prefered_time_value, $city_express, $delivery_price, $cod_tax, $loading_id, $loading_num, $currency);
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_econt_menu() {
+  $items = array();
+
+  $items['admin/store/settings/quotes/methods/econt'] = array(
+    'title' => 'ECONT quote',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_econt_admin_settings'),
+    'access arguments' => array('configure quotes'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'uc_econt.admin.inc',
+  );
+  
+  $items['admin/store/orders/econt_shipping'] = array(
+    'title' => 'ECONT shipping',
+    'page callback' => '_econt_shipping_orders',
+    'access arguments' => array('configure quotes'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'uc_econt.pages.inc',
+  );
+  $items['admin/store/settings/quotes/methods/econt/econt_data_import'] = array(
+    'title' =>'ECONT data import',
+    'page callback' => '_econt_shipping_reports',
+    'access arguments' => array('configure quotes'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'uc_econt.pages.inc',
+  );
+  $items['city/autocomplete'] = array(
+    'title' => 'Autocomplete field city',
+    'page callback' => '_city_autocomplete',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+  $items['cart/postcode/callback'] = array(
+    'title' => 'post code callback',
+    'page callback' => '_ajax_postcode_callback',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+  $items['street/autocomplete'] = array(
+    'title' => 'Autocomplete field street',
+    'page callback' => '_street_autocomplete',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['cart/ordercitypostcode'] = array(
+    'title' => 'city street callback',
+    'page callback' => '_set_ordercitypostcode',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['cart/prefdeliverydate'] = array(
+    'title' => 'prefered deliveri date if friday',
+    'page callback' => '_ajax_pref_delivery_date',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+  $items['cart/offices'] = array(
+    'title' => 'econt offices in city callback',
+    'page callback' => '_get_offices_in_city',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );
+  $items['cart/selected_office'] = array(
+    'title' => 'econt user selected office',
+    'page callback' => '_selected_office',
+    'access arguments' => array('access content'),  //
+    'type' => MENU_CALLBACK,
+  );  
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_shipping_method().
+ */
+function uc_econt_shipping_method() {
+  $enabled = variable_get('uc_quote_enabled', array());
+  $methods = array(
+    'econt' => array(
+      'id' => 'econt',
+      'module' => 'uc_econt',
+      'title' => 'ECONT',
+      'quote' => array(
+        'type' => 'small_package',
+        'callback' => 'uc_econt_quote',
+        'accessorials' => array(t('ECONT shipping services')),
+      ),
+      'enabled' => $enabled['econt'],
+      'weight' => 0,
+    ),
+  );
+
+  return $methods;
+}
+
+//fire calculate proccess - collect info, create xml file, upload it, and get response
+function uc_econt_quote($products, $details, $method) {
+
+  $validate_value = '1';
+  
+  //sender info
+  $store_addr = (array) variable_get('uc_quote_store_default_address', new stdClass());
+  
+  $store_city = $store_addr['city'];
+  $store_post_code = $store_addr['postal_code'];
+  $store_name = $store_addr['company'];
+  $store_name_person = $store_addr['first_name'] . ' ' . $store_addr['last_name'];
+  $store_phone_num = $store_addr['phone'];
+  variable_get('uc_econt_sms_notification', '1') ? $store_sms_no = $store_phone_num : $store_sms_no = '';
+  
+  $store_street1 = _street_and_opts('store', $store_addr['street1']);
+  $store_street2 = _street_and_opts('store', $store_addr['street2']);
+  
+  $store_addr = array_merge($store_addr, $store_street1, $store_street2);
+  
+  //19
+  if ($details['econt_shipping_to'] == '') {
+    //additional address fields
+    //$street_number = $details['street_number'];
+    $str_other = $_SESSION['str_other'];
+    //pref opts
+    $declared_value = $_SESSION['declared_value'];
+    $econt_shipping_to = $_SESSION['econt_shipping_to'];
+    $prefered_delivery_day = $_SESSION['prefered_delivery_day'];
+    $prefered_time_type = $_SESSION['prefered_time_type'];
+    $prefered_time_value = $_SESSION['prefered_time_value'];
+    $city_express = $_SESSION['city_express'];
+    $intercity_express = $_SESSION['intercity_express'];
+  }
+  else {
+    //additional address fields
+    
+    $str_other = $details['str_other'];
+    $_SESSION['str_other'] = $str_other;
+    //pref opts
+    $declared_value = $details['declared_value'];
+    $_SESSION['declared_value'] = $declared_value;
+    
+    $econt_shipping_to = $details['econt_shipping_to'];
+    $_SESSION['econt_shipping_to'] = $econt_shipping_to;
+    
+    $prefered_delivery_day = $details['day'];
+    $_SESSION['prefered_delivery_day'] = $prefered_delivery_day;
+    
+    $prefered_time_type = $details['prefered_time_type'];
+    $_SESSION['prefered_time_type'] = $prefered_time_type;
+    
+    $prefered_time_value = $details['prefered_time_value'];
+    $_SESSION['prefered_time_value'] = $prefered_time_value;
+    
+    $city_express = $details['city_express'];
+    $_SESSION['city_express'] = $city_express;
+    
+    $intercity_express = $details['intercity_express'];
+    $_SESSION['intercity_express'] = $intercity_express;
+  }
+  
+  $rec_street1 = _street_and_opts('receiver', $details['street1']);
+  $rec_street2 = _street_and_opts('receiver', $details['street2']);
+  
+  $rec_address = array_merge($rec_street1, $rec_street2);
+
+  $order_id = intval($_SESSION['cart_order']);
+  
+  $to_city_country_do = array($details['city'], $details['country'], $econt_shipping_to, $city_express);
+  //calcuate and set $_SESSION tariff_code and tariff_subcode
+  _get_tariff_codes($to_city_country_do);
+  
+  //set $_SESSION prefered_time_type and prefered_time_value
+  _p_time_type($prefered_time_type, $prefered_time_value);
+  
+  //set $_SESSION city_express
+  _express_services($city_express, $intercity_express);
+  
+  //intercity express
+  $_SESSION['intercity_express'] == '1' ? $service_e = 'ON' : $service_e = '';
+  
+  $fixed_price = variable_get('uc_econt_fixed_price', '0');
+  
+  $total_weight = 0;
+  $default_weight = variable_get('uc_econt_default_weight', '1');
+  
+  foreach ($products as $product) {
+    $weight = ($product->weight * $product->qty * uc_weight_conversion($product->weight_units, 'kg'));
+    if (!$weight && $default_weight) {
+      $weight = $default_weight * $product->qty;
+    }
+    $total_weight += $weight;
+    
+    $total_price += $product->price * $product->qty;
+    $description[] = $product->title . '-' . $product->qty;
+  }
+  $order_description = implode(',', $description);
+  
+  $_SESSION['total_weight'] = $total_weight;
+  $_SESSION['total_price'] = $total_price;
+  $_SESSION['order_description'] = $description;
+  
+  $_SESSION['declared_value'] > '0' ? $_SESSION['oc'] = $total_price : $_SESSION['oc'] = '';
+  //calculate on base min order total
+  _who_pays_delivery($total_price); 
+  //CASH, CREDIT automated
+  if (variable_get('uc_econt_credit_customer_number', '')) {
+    variable_get('uc_econt_shop_pay_delivery', '') < $total_price ? $_SESSION['delivery_payment_method'] = 'CREDIT' : $_SESSION['delivery_payment_method'] = 'CASH'; 
+  }
+  else {
+    $_SESSION['delivery_payment_method'] = 'CASH';
+  }
+  
+  $store_default_addr = (array) variable_get('uc_quote_store_default_address', new stdClass());
+
+  if (!$store_default_addr) {
+    watchdog('uc_econt', 'No store pickup address specified', array(), WATCHDOG_ERROR);
+    return array();
+  }
+
+  if (!$details['country']) {
+    $details['country'] = $store_default_addr['country'];
+  }
+
+  global $user;
+  
+  include_once('include/uc_econt.xml_query_calculate_delivery.inc');
+
+  //filepath
+  $sTmpFileNameSess = file_directory_temp() . '/calculate_' . session_id() . '.xml';
+
+  //create file
+  file_put_contents($sTmpFileNameSess,$xmlStr);
+    
+    $eecont_url = _eecont_url();
+    
+    $ch = curl_init($eecont_url['0']);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$sTmpFileNameSess"));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    $responseResult = curl_exec($ch);
+    $info = curl_getinfo($ch);
+    $curl_error = curl_error($ch);
+    curl_close($ch);
+    //watchdog('uc_econt', '@error', array('@error' => $xmlStr), WATCHDOG_NOTICE);
+    watchdog('uc_econt', '@resp', array('@resp' => $responseResult), WATCHDOG_NOTICE);
+    
+    if (file_exists($sTmpFileNameSess)) {
+      //unlink($sTmpFileNameSess);
+    }
+    
+    //parse xml response
+    $dom_obj = new xml2array_parser($responseResult);
+    $data_arr = $dom_obj->array;
+    
+    $delivery_date = $data_arr['response']['result']['e']['delivery_date'];
+    $delivery_price = $data_arr['response']['result']['e']['loading_price']['C'];
+    $delivery_price_dc = $data_arr['response']['result']['e']['loading_price']['DC'];//обратна разписка
+    $time_priority_tax = $data_arr['response']['result']['e']['loading_price']['P'];//time priority tax ???
+    $delivery_price_oc = $data_arr['response']['result']['e']['loading_price']['OC'];//declared value tax
+    $delivery_price_tax = $data_arr['response']['result']['e']['loading_price']['CD'];//cod
+    $express_e = $data_arr['response']['result']['e']['loading_price']['E'];//intercity express
+    $express_e1 = $data_arr['response']['result']['e']['loading_price']['E1'];//city express
+    $express_e2 = $data_arr['response']['result']['e']['loading_price']['E2'];//city express
+    $express_e3 = $data_arr['response']['result']['e']['loading_price']['E3'];//city express
+    $total_delivery_price = $data_arr['response']['result']['e']['loading_price']['total'];
+    $currency = $data_arr['response']['result']['e']['loading_price']['currency'];
+    $error = $data_arr['response']['result']['e']['error'];
+    $error_code = $data_arr['response']['result']['e']['error_code'];
+    
+    if($delivery_date) {$delivery_date = date('d.m.Y', strtotime($delivery_date));}
+    
+    $delivery_price += $delivery_price_dc + $time_priority_tax + $delivery_price_oc + $express_e + $express_e1 + $express_e2 + $express_e3;
+    
+    if ($info['http_code'] == 200 && $delivery_date) {
+      $_SESSION['delivery_date'] = $delivery_date;
+      $_SESSION['delivery_price'] = $delivery_price;
+      $_SESSION['cod_tax'] = $delivery_price_tax;
+      
+      $sess_id = session_id();
+      $key = 'delivery_price_tax';
+      $value = $delivery_price_tax;
+      
+      $exist_sess = db_result(db_query("SELECT sess_id FROM {uc_econt_sess} WHERE sess_id = '%s'", $sess_id));
+      if ($exist_sess) {
+        db_query("UPDATE {uc_econt_sess} SET val = '%s' WHERE sess_id = '%s' AND key_name = '%s'", $value, $sess_id, $key);
+      }
+      else {
+        db_query("INSERT INTO {uc_econt_sess} (sess_id, key_name, val) VALUES ('%s', '%s', '%s')", $sess_id, $key, $value);
+      }
+    }
+    
+    if ($delivery_price > '0') {
+      $_SESSION['delivery_price'] = $delivery_price;
+    }
+    elseif ($delivery_price == '0' && $info['http_code'] == 200) {
+      $delivery_price = $_SESSION['delivery_price'];
+    }
+    else {
+      $delivery_price = variable_get('uc_econt_fixed_price', '0');
+    }
+    
+    if ($currency) {
+      $_SESSION['currency'] = $currency;
+    }
+    
+  $img = '<img src="' . base_path() . drupal_get_path('module', 'uc_econt') . '/econt.gif' .'" />';
+  
+  switch ($_SESSION['pay_delivery_side']) {
+    
+    case 'RECEIVER':
+      if ($responseResult && !($error || $error_code)) {
+        $option_label = $img . t('ECONT shipping services');
+        $option_label .= '<span class="uc-econt-delivery-time"> (' . t('delivery date') . ' ' . $delivery_date . ')</span> ';
+      }
+      elseif($error || $error_code) {        
+        $option_label = $img . t('ECONT shipping services') . '-> <span style="color:red">' . $error . '</span> ';
+        $delivery_price = '0';
+        watchdog('uc_econt', 'error: @error, error_code: @error_code', array('@error' => $error, '@error_code' => $error_code), WATCHDOG_ERROR);
+      }
+      else {
+        $option_label = $img . t('ECONT shipping services') . ': <span style="color:red">' . t('no connection to ECONT website') . '</span>, ' . t('fixed price');
+        $delivery_price = variable_get('uc_econt_fixed_price', 0);//fixed price
+        $_SESSION['delivery_price'] = $delivery_price;
+        watchdog('uc_econt', 'No connection to ECONT website, fixed price @fixed_price on order @order_id', array('@fixed_price' => $delivery_price, '@order_id' => $order_id), WATCHDOG_WARNING);
+      }
+      break;
+     
+    case 'SENDER':
+      $option_label = $img . t('ECONT shipping services') . ': <span style="color:green">' . t('Delivery shall be paid from the store') . '</span>';      
+      $delivery_price = '0';
+      break;
+  }//end switch
+   
+  $context = array(
+    'revision' => 'altered',
+    'type' => 'amount',
+  );
+   
+  $altered = uc_price($delivery_price, $context);
+  $context['revision'] = 'formatted';
+  $formatted = uc_price($delivery_price, $context);
+  $quotes[] = array(
+                    'rate' => $altered,
+                    'format' => $formatted,
+                    'option_label' => $option_label
+  );
+
+  return $quotes;
+}
+
+//calculate tariff code, tariff_subcode
+// $arg1 = array(to_city, to_country)
+function _get_tariff_codes($arg1) {
+  $store_default_addr = (array) variable_get('uc_quote_store_default_address', new stdClass());
+  $store_city = $store_default_addr['city'];
+  $store_country = $store_default_addr['country'];
+  //0->door, 1->office
+  $store_from_do = variable_get('uc_econt_send_delivery_from', '1');
+  //$arg1 - array city, country, door:office, city express
+  $to_city = $arg1['0']; 
+  $to_country = $arg1['1'];
+  $shipping_to = $arg1['2'];
+  $city_express = $arg1['3'];
+  
+  $from_to = array('DOOR', 'OFFICE');
+  
+  //calculate subcode
+  $tariff_subcode = $from_to[$store_from_do] . '_' . $from_to[$shipping_to];
+  
+  //calculate tariff_code tariff code
+  if ($store_country == '100') {
+    if ($store_city == $to_city && $tariff_subcode != 'OFFICE_OFFICE') {
+      $tariff_code = '1';
+    }
+    else {
+      switch ($tariff_subcode) {
+        case 'OFFICE_OFFICE':
+          $tariff_code = '2';
+          break;
+        case 'DOOR_OFFICE':
+        case 'OFFICE_DOOR':
+          $tariff_code = '3';
+          break;
+        case 'DOOR_DOOR':
+          $tariff_code = '4';
+          break;
+      }
+    }
+  }
+  elseif ($from_country == '642' && $to_country == '642') {
+    $tariff_code = '5';
+    $tariff_subcode = '';
+  }
+  
+  //watchdog('uc_econt', 'tariff_code @tariff_code, tariff_subcode @tariff_subcode', array('@tariff_code' => $tariff_code, '@tariff_subcode' => $tariff_subcode), WATCHDOG_NOTICE);
+  
+  $_SESSION['tariff_code'] = $tariff_code;
+  $_SESSION['tariff_subcode'] = $tariff_subcode;
+
+}
+
+//calculate who pays delivery
+function _who_pays_delivery($arg1) {
+  $pays_delivery = array('SENDER', 'RECEIVER');
+  $pay_delivery_sum = variable_get('uc_econt_shop_pay_delivery', '');
+  
+  if ($pay_delivery_sum == '' || $arg1 < $pay_delivery_sum) {
+    $pay_delivery = $pays_delivery['1'];
+  }
+  else {
+    $pay_delivery = $pays_delivery['0'];
+  }
+  $_SESSION['pay_delivery_side'] = $pay_delivery;
+}
+
+//prefered time type
+function _p_time_type ($arg1, $arg2) {
+  $p_type = $arg1;
+  $p_types = array('BEFORE', 'IN', 'AFTER');
+  $p_type = $p_types[$p_type - '1'];
+  
+  $_SESSION['p_time_value'] = $arg2;
+  $_SESSION['p_time_type'] = $p_type;
+}
+
+//city express
+function _express_services($arg1, $arg2) {
+  $arg1 == '1' ? $_SESSION['service_e1'] = 'ON' : $_SESSION['service_e1'] = '';
+  $arg1 == '2' ? $_SESSION['service_e2'] = 'ON' : $_SESSION['service_e2'] = '';
+  $arg1 == '3' ? $_SESSION['service_e3'] = 'ON' : $_SESSION['service_e3'] = '';
+  $arg2 == TRUE ? $_SESSION['service_e'] = 'ON' : $_SESSION['service_e'] = '';
+}
+
+/**
+ * Implementation of hook_ca_predicate().
+ *
+ * Connect the ECONT quote action and event.
+ */
+
+function uc_econt_ca_predicate() {
+  $enabled = variable_get('uc_quote_enabled', array());
+
+  $predicates = array(
+    'uc_econt_get_quote' => array(
+      '#title' => t('Shipping quote from ECONT'),
+      '#trigger' => 'get_quote_from_econt',
+      '#class' => 'uc_econt',
+      '#status' => $enabled['econt'],
+      '#actions' => array(
+        array(
+          '#name' => 'uc_quote_action_get_quote',
+          '#title' => t('Fetch a shipping quote'),
+          '#argument_map' => array(
+            'order' => 'order',
+            'method' => 'method',
+          ),
+        ),
+      ),
+    ),
+  );
+
+  return $predicates;
+}
+
+/**
+* autocomplete helper for city on delivery pane
+* $string = string for search
+*/
+function _city_autocomplete($string) {
+  $matches = array();
+  $result = db_query_range("SELECT name, post_code FROM {uc_econt_cities} WHERE LOWER(name) LIKE LOWER('%s%') ORDER BY name", $string, 0, 10);
+  // add matches to $matches
+  while ($data = db_fetch_object($result)) {
+    $matches[$data->name] = check_plain($data->name);
+  }
+  // return json
+  drupal_json($matches);
+}
+
+function _ajax_postcode_callback ($arg1) {
+  $result = db_query("SELECT post_code FROM {uc_econt_cities} WHERE name = '%s'", $arg1);
+  while ($row = db_fetch_array($result)) {
+    $post_code[] = $row['post_code'];
+  }
+  count($post_code) > '1' ? $post_code= implode(',', $post_code) : $post_code = $post_code['0'];
+  
+  //express service selector
+  $store_addr = (array) variable_get('uc_quote_store_default_address', new stdClass());
+  if ($store_addr['city'] == $arg1) {
+    $hideme = '#edit-panes-delivery-pref-opts-delivery-intercity-express-wrapper';
+  }
+  else {
+    $hideme = '#edit-panes-delivery-pref-opts-delivery-city-express-wrapper';
+  }
+  
+  return drupal_json(array('post_code' => $post_code, 'hideme' => $hideme));
+  exit;
+}
+
+/**
+* autocomplete helper for street on delivery pane
+* $string = string for search
+*/
+function _street_autocomplete($string) {
+  $post_code = $_SESSION['ordercitypostcode'];
+  
+  if (strpos($string, ',')) {
+    $array = explode(',', $string);
+    $last_string = trim(array_pop($array));
+  }
+  else {
+    $last_string = $string;
+  }
+  
+  $matches = array();
+  
+  $result = db_query("(SELECT name FROM {uc_econt_quarters} WHERE LOWER(name) LIKE LOWER('%%%s%%') AND city_post_code = '%s') UNION (SELECT name FROM {uc_econt_streets} WHERE LOWER(name) LIKE LOWER('%%%s%%') AND city_post_code = '%s') ORDER BY name LIMIT 10", $last_string, $post_code, $last_string, $post_code);
+  
+  $prefix = count($array) ? implode(', ', $array) .', ' : '';
+  // add matches to $matches
+  while ($data = db_fetch_object($result)) {
+    $matches[$prefix . $data -> name] = $data -> name;
+  }
+  exit(drupal_json($matches));
+}
+
+//set cuurent order city post code in session variable
+function _set_ordercitypostcode ($arg1) {
+  $_SESSION['ordercitypostcode'] = $arg1;
+  $_SESSION['ordercity_idoffice'] = db_result(db_query("SELECT id_office FROM {uc_econt_cities} WHERE post_code = '%s'", $arg1));
+  watchdog('uc_econt', 'test @post_code', array('@post_code' => $arg1), WATCHDOG_NOTICE);
+}
+
+//posible delivery date if today is friday
+function _ajax_pref_delivery_date($date) {
+  include_once('include/uc_econt.get_delivery_days.inc');
+  //filepath
+  $sTmpFileNameSess = file_directory_temp() . '/delivery_days_' . session_id() . '.xml';
+  file_put_contents($sTmpFileNameSess,$xmlStr);
+    
+  $eecont_url = _eecont_url();
+  $tool_url = $eecont_url['1'];
+  
+  $ch = curl_init($tool_url);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$sTmpFileNameSess"));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+  $responseResult = curl_exec($ch);
+  $info = curl_getinfo($ch);
+  $curl_error = curl_error($ch);
+  curl_close($ch);
+  
+  if (file_exists($sTmpFileNameSess)) {
+    unlink($sTmpFileNameSess);
+  }
+  //filepath
+  $sTmpFileNameResp = file_directory_temp() . '/response_delivery_days_' . session_id() . '.xml';
+  file_put_contents($sTmpFileNameResp,$responseResult);
+  $xml = simplexml_load_file($sTmpFileNameResp, 'SimpleXMLElement', LIBXML_NOCDATA);
+  $p_cnt = count($xml->delivery_days->e);
+  $data = amstore_xmlobj2array($xml, 2);
+
+  for($i = 0; $i < $p_cnt; $i++) { 
+    foreach ($data['delivery_days']['delivery_days'][$i] as $key => $val) {
+      $received_date = $data['delivery_days']['delivery_days'][$i]['date'];
+    }
+  $delivery_date[] = $received_date;
+  }
+
+  if (count($delivery_date) > 1) $delivery_date = implode(',', $delivery_date);
+  return drupal_json($delivery_date);
+  exit;
+}
+
+/**
+ *
+ * Get offices when city and post code is entered
+ * and delivery_to options is 'office'
+ *
+ * return avalable offices in json
+ *
+ */
+function _get_offices_in_city() {
+  $id_city = db_result(db_query("SELECT id_city FROM {uc_econt_offices} WHERE id = '%s'", $_SESSION['ordercity_idoffice']));
+  $offices = db_query("SELECT*FROM {uc_econt_offices} WHERE id_city = '%s'", $id_city);
+  $matches = array();
+  while ($data = db_fetch_object($offices)) {
+    if (strpos($data -> name, 'закрит')) continue;
+    $matches[] = check_plain($data->name);
+  }
+  $offices = implode(',', $matches);
+  
+//  watchdog('uc_econt', 'offices @post_code', array('@post_code' => $offices), WATCHDOG_NOTICE);
+  // return json
+  return drupal_json(array('offices' => $offices));
+  exit;
+}
+
+//get selected office
+function _selected_office ($arg1) {
+  if ($arg1 == 'clear' || $arg1 == '') {
+    $_SESSION['selected_office'] = '';
+    watchdog('uc_econt', 'clear @post_code', array('@post_code' => 'clear officecode'), WATCHDOG_NOTICE);
+  }
+  else {
+    $office_code = db_result(db_query("SELECT office_code FROM {uc_econt_offices} WHERE name = '%s'", $arg1));
+    $_SESSION['selected_office'] = $office_code;
+  }
+}
+
+//econt messages
+function _econt_messages() {
+  //dc / dc_cp
+  switch (variable_get('uc_econt_receipt', '0')) {
+    case 'dc':
+      $_SESSION['dc'] = 'ON';
+      $_SESSION['dc_cp'] = '';
+      break;
+    case 'dc_cp':
+      $_SESSION['dc'] = '';
+      $_SESSION['dc_cp'] = 'ON';
+      break;
+    case 'none':
+      $_SESSION['dc'] = '';
+      $_SESSION['dc_cp'] = '';
+      break;
+  }
+  
+  if (variable_get('uc_econt_extra_declared_value', '1') == '1' && $cart_total < '10000') {
+    $message[] = t('This product is insured for the time of delivery.');
+  }
+  elseif (variable_get('uc_econt_extra_declared_value', '1') == '2' && $cart_total < '10000') {
+    $message[] = t('This product is insured for the time of delivery, if enable Prefered options -> Declared value. Orders above @auto_declared_value BGN. always be insured.', array('@auto_declared_value' => variable_get('uc_econt_auto_declared_value', '0')));
+  }
+  
+  if (variable_get('uc_econt_instruction_returns', 'returns') == 'returns') {
+    $message[] = t('Returns the expense of store.');
+  }
+  elseif (variable_get('uc_econt_instruction_returns', 'shipping_returns') == 'shipping_returns') {
+    $message[] = t('Shipping & Returns the order at the expense of store.');
+  }
+  elseif (variable_get('uc_econt_instruction_returns', 'shipping_returns') == '0') {
+    $message[] = t('Shipping & Returns the order at the expense of receiver.');
+  }
+  
+  if (variable_get('uc_econt_receipt', 'dc') == 'dc') {
+    $message[] = t('Стоката ще пътува с Обратна разписка.');
+  }
+  if (variable_get('uc_econt_receipt', 'dc') == 'dc_cp') {
+    $message[] = t('Стоката ще пътува със Стокова + обратна разписка.');
+  }
+   
+  $message = implode(' ', $message);
+  return $message;
+}
+
+//receiver or store address street, avenu, etc. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+include_once('include/funcs.inc.php');
+
+//parce xml response to array function
+include_once('include/xml2array.inc.php');
+include_once('include/xmlobj2array.inc.php');

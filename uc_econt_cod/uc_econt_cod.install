@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for uc_econt_cod.module.
+ */
+
+function uc_econt_cod_schema() {
+  $schema = array();
+
+  $schema['uc_econt_cod'] = array(
+    'description' => 'Econt COD payment information.',
+    'fields' => array(
+      'order_id' => array(
+        'description' => 'The {uc_orders}.order_id.',
+        'type' => 'int',
+        'default' => 0,
+      ),
+      'tax' => array(
+        'description' => 'Tax rate of the Econt COD payment.',
+        'type' => 'varchar',
+        'length' => 8,
+      ),
+      'status' => array(
+        'description' => 'Status of Econt COD payment.',
+        'type' => 'varchar',
+        'length' => 20,
+      ),
+    ),
+    'primary key' => array('order_id'),
+  );
+  return $schema;
+}
+
+function uc_econt_cod_install() {
+  drupal_install_schema('uc_econt_cod');
+}
+
+function uc_econt_cod_uninstall() {
+  drupal_uninstall_schema('uc_econt_cod');
+  
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_econt_cod_%%'");
+}

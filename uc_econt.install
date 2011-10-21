@@ -1,0 +1,439 @@
+<?php
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_econt_uninstall() {
+  drupal_uninstall_schema('uc_econt_shipping');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'uc_econt_%%'");
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_econt_install() {
+  drupal_install_schema('uc_econt_shipping');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+
+function uc_econt_shipping_schema() {
+  $schema = array();
+
+  $schema['uc_econt_shipping'] = array(
+    'description' => 'Econt order Shipping information.',
+    'fields' => array(
+      'order_id' => array(
+        'description' => 'The {uc_orders}.order_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      
+      'delivery_str_other' => array(
+        'description' => 'delivery street Other.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'pay_delivery_side' => array(
+        'description' => 'Side pay delivery.',
+        'type' => 'varchar',
+        'length' => 8,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'delivery_payment_method' => array(
+        'description' => 'CASH / CREDIT.',
+        'type' => 'varchar',
+        'length' => 8,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'tariff_code' => array(
+        'description' => 'Tariff code.',
+        'type' => 'int',
+        'length' => 2,
+        'size' => 'small',
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'tariff_subcode' => array(
+        'description' => 'Tariff subcode.',
+        'type' => 'varchar',
+        'length' => 13,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'declared_value' => array(
+        'description' => 'Declared value.',
+        'type' => 'int',
+        'length' => 1,
+        'size' => 'small',
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'shipping_to' => array(
+        'description' => 'Shipping to door/office.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'selected_office' => array(
+        'description' => 'Selected office to delivery.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'delivery_date' => array(
+        'description' => 'Prefered delivery date.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'service_e' => array(
+        'description' => 'intercity express.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'service_e1' => array(
+        'description' => 'city express E1.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'service_e2' => array(
+        'description' => 'city express E2.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'service_e3' => array(
+        'description' => 'city express E3.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'prefered_time_type' => array(
+        'description' => 'Prefered time type.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'prefered_time_value' => array(
+        'description' => 'Prefered time value.',
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'city_express' => array(
+        'description' => 'City express courier.',
+        'type' => 'int',
+        'length' => 1,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'delivery_price' => array(
+        'description' => "Delivery price.",
+        'type' => 'numeric',
+        'precision' => 16,
+        'scale' => 2,
+        'not null' => FALSE,
+        'default' => 0.0,
+      ),
+      'cod_tax' => array(
+        'description' => 'COD tax.',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+      'currency' => array(
+        'description' => 'Currency.',
+        'type' => 'varchar',
+        'length' => 6,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'loading_id' => array(
+        'description' => 'Loading ID.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'loading_num' => array(
+        'description' => 'Loading num.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'pdf' => array(
+        'description' => 'Application delivery link.',
+        'type' => 'varchar',
+        'length' => 150,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'blank' => array(
+        'description' => 'Application delivery blank.',
+        'type' => 'varchar',
+        'length' => 150,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'Application delivery status.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('order_id'),
+  );
+  
+  $schema['uc_econt_sess'] = array(
+    'description' => 'Econt session delivery vars.',
+    'fields' => array(
+      'sess_id' => array(
+        'description' => 'sess id.',
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'key_name' => array(
+        'description' => 'delivery street No.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'val' => array(
+        'description' => 'delivery Housing complex.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('sess_id'),
+  );
+  
+  $schema['uc_econt_cities'] = array(
+    'description' => 'Econt cities.',
+    'fields' => array(
+      'cid' => array(
+        'description' => 'The id.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'post_code' => array(
+        'description' => 'post code.',
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'type' => array(
+        'description' => 'settlement type.',
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'name.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name_en' => array(
+        'description' => 'name en.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_office' => array(
+        'description' => 'office id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id' => array(
+        'description' => 'econt city id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_country' => array(
+        'description' => 'country id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_zone' => array(
+        'description' => 'Econt zone id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+  
+  $schema['uc_econt_quarters'] = array(
+    'description' => 'Econt quarters.',
+    'fields' => array(
+      'city_post_code' => array(
+        'description' => 'city post code.',
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'name.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name_en' => array(
+        'description' => 'name en.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_city' => array(
+        'description' => 'city id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id' => array(
+        'description' => 'econt city id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  $schema['uc_econt_streets'] = array(
+    'description' => 'Econt streets.',
+    'fields' => array(
+      'sid' => array(
+        'description' => 'The id.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'city_post_code' => array(
+        'description' => 'city post code.',
+        'type' => 'varchar',
+        'length' => 5,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'name.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name_en' => array(
+        'description' => 'name en.',
+        'type' => 'varchar',
+        'length' => 30,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_city' => array(
+        'description' => 'city id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id' => array(
+        'description' => 'econt city id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+  
+  $schema['uc_econt_offices'] = array(
+    'description' => 'Econt offices.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'ID',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'name.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'office_code' => array(
+        'description' => 'Office code.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'address' => array(
+        'description' => 'Office address.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'id_city' => array(
+        'description' => 'City id.',
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  
+  return $schema;
+}

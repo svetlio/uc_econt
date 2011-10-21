@@ -1,0 +1,7 @@
+name = Econt Cashe on delivery
+description = Provides the Econt Cashe on delivery Payment methods.
+dependencies[] = uc_cart
+dependencies[] = uc_payment
+dependencies[] = uc_econt
+package = "Ubercart - payment"
+core = 6.x

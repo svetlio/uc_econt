@@ -1,0 +1,746 @@
+# $Id$
+#
+# Bulgarian translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  uc_econt.admin.inc: n/a
+#  uc_econt.module: n/a
+#  uc_econt.pages.inc: n/a
+#  uc_econt.info: n/a
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2011-08-14 09:22+0300\n"
+"PO-Revision-Date: 2011-08-14 09:22+0300\n"
+"Last-Translator: NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Bulgarian <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: uc_econt.admin.inc:10
+msgid "Demo mode"
+msgstr "Демо режим"
+
+#: uc_econt.admin.inc:10
+msgid "Live mode"
+msgstr "Реален режим"
+
+#: uc_econt.admin.inc:11;12;13
+msgid "Disabled"
+msgstr "Деактивиран"
+
+#: uc_econt.admin.inc:11
+msgid "Shipping and returns"
+msgstr "Доставка и връщане"
+
+#: uc_econt.admin.inc:11
+msgid "Returns"
+msgstr "Връщане"
+
+#: uc_econt.admin.inc:12
+msgid "Acknowledgment - DC"
+msgstr "Обратна разписка - DC"
+
+#: uc_econt.admin.inc:12
+msgid "Acknowledgment + stock receipt - DC-CP"
+msgstr ""
+"Обратна разписка + стокова разписка - "
+"DC-CP"
+
+#: uc_econt.admin.inc:13
+msgid "Always On"
+msgstr "Задължително"
+
+#: uc_econt.admin.inc:13
+msgid "Users choose"
+msgstr "По избор"
+
+#: uc_econt.admin.inc:19
+msgid "Econt shipping options"
+msgstr "Еконт - Опции на доставка"
+
+#: uc_econt.admin.inc:27
+msgid "Pickup address status"
+msgstr "Състояние на адрес на магазина"
+
+#: uc_econt.admin.inc:29
+msgid "Econt shipping will be active only if default pickup address\n      was filled on <a href=\"@url\">Shipping quote settings</a> page and it is located in Bulgaria, !!! Current country is @country"
+msgstr ""
+"Модула \" Доставка с Еконт\" работи само "
+"когато страната подател и получател е "
+"България."
+
+#: uc_econt.admin.inc:37
+msgid "Calculate delivery mode"
+msgstr "Режим на Изчисляване на доставката"
+
+#: uc_econt.admin.inc:40
+msgid "To test calculating delivery use Demo mode."
+msgstr ""
+"За проверка на работата на модула "
+"използвайте Демо режим."
+
+#: uc_econt.admin.inc:52
+msgid "Send delivery from"
+msgstr "Изпращане на доставката от"
+
+#: uc_econt.admin.inc:54 uc_econt.module:40
+msgid "door"
+msgstr "врата"
+
+#: uc_econt.admin.inc:54
+msgid "Econt office"
+msgstr "Еконт офис"
+
+#: uc_econt.admin.inc:55
+msgid "Send a consignment of Еcont office, or from your store door."
+msgstr ""
+"Изпращане на доставката от вашата "
+"врата, или от офис на Еконт."
+
+#: uc_econt.admin.inc:60
+msgid "The Delivery is on behalf of the shop"
+msgstr "Доставката се плаща от магазина"
+
+#: uc_econt.admin.inc:62
+msgid "Delivery is charged to the store when the contract value is greater than this value, where less is paid by the customer. Value zero /0/ = always at the expense of Store. Blank field = always on behalf of Client."
+msgstr ""
+"Доставката се плаща от магазина, "
+"когато стойността на поръчаните "
+"продукти е по-голяма от тази стойност. "
+"Стойност 0 = винаги се плаща от "
+"магазина. Празно поле = винаги се плаща "
+"от клиента."
+
+#: uc_econt.admin.inc:69
+msgid "Fixed delivery price"
+msgstr "Фиксирана цена на доставка"
+
+#: uc_econt.admin.inc:71
+msgid "If ECONT website is unreachable to generate the price of delivery, this price is used as a ECONT delivery price."
+msgstr ""
+"Ако сайта на Еконт е недостъпен, се "
+"използва тази стойност като цена за "
+"доставка."
+
+#: uc_econt.admin.inc:78
+msgid "Sms notification of shipment"
+msgstr "Смс известяване за доставка"
+
+#: uc_econt.admin.inc:80
+msgid "Sms notification of the store for a shipment."
+msgstr ""
+"Известяване с смс (на магазина) при "
+"получаване на доставката."
+
+#: uc_econt.admin.inc:86
+msgid "Invoice before pay CD"
+msgstr "Фактура преди плащане на НП"
+
+#: uc_econt.admin.inc:88
+msgid "Enable uc_econt_invoice_before_pay."
+msgstr "Получаване на фактура преди плащане."
+
+#: uc_econt.admin.inc:93
+msgid "Pay after accept"
+msgstr "Плащане след приемане"
+
+#: uc_econt.admin.inc:95
+msgid "Orders consignment to be inspected by the recipient and pay cash on delivery only if you ACCEPT my product."
+msgstr ""
+"Тъговецът позволява преглед на "
+"пратката преди плащането на наложения "
+"платеж."
+
+#: uc_econt.admin.inc:100
+msgid "Pay after test"
+msgstr "Плащане след тест"
+
+#: uc_econt.admin.inc:102
+msgid "Orders consignment to be Inspected and Tested by recipient and to pay cash on delivery only if\nI accept the goods."
+msgstr ""
+"Търговецът позволява преглед и тест "
+"на пратката преди плащането на "
+"наложения платеж."
+
+#: uc_econt.admin.inc:109
+msgid "Pay for a canceled item"
+msgstr "Разходи на отказана пратка"
+
+#: uc_econt.admin.inc:112
+msgid "When refused shipment on account of the sender is the cost of selected activities. When Disabled, all expenses are charged to the customer."
+msgstr ""
+"\"Деактивиран\" -  При отказ на пратката "
+"доставката и връщането е за сметка на "
+"получателя. \"Доставка и връщане\" - "
+"Търговецът желае при отказ на "
+"пратката след преглед да заплати "
+"доставката и връщането й. \"Връщане\" - "
+"Търговецът желае при отказ на "
+"пратката след преглед да заплати "
+"връщането й."
+
+#: uc_econt.admin.inc:117
+msgid "Receipts"
+msgstr "Разписки"
+
+#: uc_econt.admin.inc:120
+msgid "Acknowledgment DC / Acknowledgment + stock receipt DC-CP for shipping product."
+msgstr ""
+"Обратна разписка или Обратна разписка "
+"+ стокова разписка за доставката."
+
+#: uc_econt.admin.inc:125
+msgid "Two-way shipment - DP"
+msgstr "Двупосочна пратка - DP."
+
+#: uc_econt.admin.inc:127
+msgid "Two-way shipment."
+msgstr "Двупосочна пратка."
+
+#: uc_econt.admin.inc:133
+msgid "Econt customer number of credit payment"
+msgstr ""
+"Econt клиентски номер за плащане на "
+"кредит"
+
+#: uc_econt.admin.inc:135
+msgid "Customer number for payment of the supply of credit by the sender. <a href=\"@url\">Agreement.</a>"
+msgstr ""
+"Клиентски номер на Споразумение за "
+"отложено плащане на доставката, "
+"когато тя е за сметка на магазина. <a "
+"href=\"@url\">Споразумение.</a>"
+
+#: uc_econt.admin.inc:142
+msgid "Agreement number for COD"
+msgstr "Номер на споразумение за НП"
+
+#: uc_econt.admin.inc:144
+msgid "Number of payment for COD."
+msgstr ""
+"Номер на споразумение за изплащане на "
+"НП по банков път, ако има такъв."
+
+#: uc_econt.admin.inc:152
+msgid "Econt Extra customer options"
+msgstr "Еконт - Предпочитани опции от клиента"
+
+#: uc_econt.admin.inc:153
+msgid "On the next fields, if enabled here customer will choose or set these options on checkout pane."
+msgstr ""
+"Следващите полета активират различни "
+"опции на доставката за избор за "
+"клиента при завършване на поръчката."
+
+#: uc_econt.admin.inc:159
+msgid "Date priority"
+msgstr "Приоритет за дата"
+
+#: uc_econt.admin.inc:161
+msgid "Enable the date priority."
+msgstr ""
+"Включва за избор Предпочитана дата за "
+"доставка."
+
+#: uc_econt.admin.inc:166
+msgid "Time priority"
+msgstr "Час за приоритет"
+
+#: uc_econt.admin.inc:168
+msgid "Enable the time priority."
+msgstr "Включва за избор час за приоритет."
+
+#: uc_econt.admin.inc:173 uc_econt.module:99
+msgid "Declared value"
+msgstr "Обявена стойност"
+
+#: uc_econt.admin.inc:176
+msgid "Enable the field for declared value."
+msgstr "Включва за избор Обявена стойност"
+
+#: uc_econt.admin.inc:181
+msgid "Auto declared value"
+msgstr "Обявена Стойност"
+
+#: uc_econt.admin.inc:183
+msgid "Automatically enable option \"declared value\" for orders over that amount."
+msgstr ""
+"Задължително включва услугата "
+"Обявена стойност за поръчки над "
+"определената стойност."
+
+#: uc_econt.admin.inc:190
+msgid "Express services"
+msgstr "Експресни услуги"
+
+#: uc_econt.admin.inc:192
+msgid "Enable city express / intercity express courier."
+msgstr ""
+"Разрешаване на опция за Експресни "
+"градски / междуградски услуги."
+
+#: uc_econt.admin.inc:198
+msgid "e-Econt client login data"
+msgstr "Еконт - данни на потребител"
+
+#: uc_econt.admin.inc:204
+msgid "e-Econt username"
+msgstr "e-Econt потребителско име"
+
+#: uc_econt.admin.inc:206
+msgid "Client username on e-Econt profile"
+msgstr ""
+"Потребителското име от профила в "
+"Еконт"
+
+#: uc_econt.admin.inc:211
+msgid "e-Econt password"
+msgstr "e-Econt парола"
+
+#: uc_econt.admin.inc:213
+msgid "Client password on e-Econt profile, leave blank to not change current if it has been introduced."
+msgstr ""
+"Клиентска парола в профила в Еконт "
+"сайта. Празно поле = без промяна."
+
+#: uc_econt.admin.inc:241
+msgid "Completed"
+msgstr "Валиден"
+
+#: uc_econt.admin.inc:241
+msgid "store address is available"
+msgstr "Адреса на магазина е въведен."
+
+#: uc_econt.admin.inc:244
+msgid "Not completed!"
+msgstr ""
+
+#: uc_econt.pages.inc:7
+msgid "Orders to generate shipping query on Econt site"
+msgstr ""
+"Поръчки с Еконт доставка, генериране "
+"на товарителници."
+
+#: uc_econt.pages.inc:16
+msgid "Econt shipping Reports with statuses"
+msgstr ""
+
+#: uc_econt.pages.inc:124
+msgid "Order"
+msgstr "Поръчка"
+
+#: uc_econt.pages.inc:126
+msgid "Delivery date"
+msgstr "Дата на доставка"
+
+#: uc_econt.pages.inc:127
+msgid "Delivery name"
+msgstr "Получател"
+
+#: uc_econt.pages.inc:128
+msgid "Delivery phone"
+msgstr "Телефон на получателя"
+
+#: uc_econt.pages.inc:130
+msgid "Bill of lading"
+msgstr "Товарителница"
+
+#: uc_econt.pages.inc:131
+msgid "Download and print"
+msgstr "Изтегляне за печат"
+
+#: uc_econt.pages.inc:132
+msgid "Delivery status"
+msgstr "Състояние на доставката"
+
+#: uc_econt.pages.inc:138
+msgid "View order"
+msgstr "Виж поръчката"
+
+#: uc_econt.pages.inc:144
+msgid "download"
+msgstr "Изтегляне"
+
+#: uc_econt.pages.inc:144
+msgid "Download application delivery pdf file"
+msgstr ""
+
+#: uc_econt.pages.inc:165
+msgid "bar"
+msgstr ""
+
+#: uc_econt.pages.inc:170
+msgid "Create for order"
+msgstr "Генериране за поръчка"
+
+#: uc_econt.pages.inc:307
+msgid "orderid"
+msgstr ""
+
+#: uc_econt.pages.inc:312
+msgid "Check status"
+msgstr "Провери"
+
+#: uc_econt.pages.inc:370
+msgid "Bill is triggered:"
+msgstr ""
+
+#: uc_econt.pages.inc:370
+msgid "Bill is not triggered:"
+msgstr "Товарителницата не е задействана:"
+
+#: uc_econt.pages.inc:372
+msgid "Date of delivery:"
+msgstr "Дата на доставка:"
+
+#: uc_econt.pages.inc:372
+msgid "Receiver:"
+msgstr "Лице, получило пратката:"
+
+#: uc_econt.pages.inc:372
+msgid "Receiver phone:"
+msgstr "Телефон на получателя:"
+
+#: uc_econt.pages.inc:372
+msgid "Courier:"
+msgstr "Куриер, предал пратката:"
+
+#: uc_econt.pages.inc:372
+msgid "Courier phone:"
+msgstr "Телефон на куриера предал пратката:"
+
+#: uc_econt.pages.inc:372
+msgid "Total CD:"
+msgstr "Сума на наложения платеж:"
+
+#: uc_econt.pages.inc:372
+msgid "Date get CD:"
+msgstr "Дата на събиране на наложения платеж:"
+
+#: uc_econt.pages.inc:372
+msgid "Date send CD:"
+msgstr "Дата на изплащане на наложения платеж:"
+
+#: uc_econt.pages.inc:230;282;285;291;297 uc_econt.module:516;616;622;829;901
+msgid "uc_econt"
+msgstr ""
+
+#: uc_econt.pages.inc:230
+msgid "application delivery: @xmlStr"
+msgstr ""
+
+#: uc_econt.pages.inc:282;291;297
+msgid "@message"
+msgstr ""
+
+#: uc_econt.pages.inc:285
+msgid "@error"
+msgstr "@error"
+
+#: uc_econt.module:39;48
+msgid "none"
+msgstr "нито един"
+
+#: uc_econt.module:39
+msgid "before"
+msgstr "преди"
+
+#: uc_econt.module:39
+msgid "in"
+msgstr "в"
+
+#: uc_econt.module:39
+msgid "after"
+msgstr "след"
+
+#: uc_econt.module:40
+msgid "office"
+msgstr "офис"
+
+#: uc_econt.module:48
+msgid "to 60 min. (Е1)"
+msgstr "до 60 мин. (Е1)"
+
+#: uc_econt.module:48
+msgid "to 90 min. (Е2)"
+msgstr "до 90 мин. (Е2)"
+
+#: uc_econt.module:48
+msgid "to 120 min. (Е3)"
+msgstr "до 120 мин. (Е3)"
+
+#: uc_econt.module:52
+msgid "Office locator"
+msgstr "Офис на картата"
+
+#: uc_econt.module:63
+msgid "Full name"
+msgstr "Получател"
+
+#: uc_econt.module:69
+msgid "Separate housing complex and street if exist with a comma (,)"
+msgstr ""
+"При необходимост отделете квартал и "
+"улица със запетая (,)"
+
+#: uc_econt.module:70
+msgid "Street2 title"
+msgstr "№, бл., вх., ет., ап."
+
+#: uc_econt.module:72;182
+msgid "Separate two or more elements with a comma (,)"
+msgstr ""
+"Разделете два и повече елемента със "
+"запетаи (,). Например бл.10, вх.6, ап.12"
+
+#: uc_econt.module:73
+msgid "Phone format 08XXXXXXXX"
+msgstr "Шаблон за телефонен номер 08XXXXXXXX"
+
+#: uc_econt.module:75
+msgid "The delivery price is automatically generated when you enter your address. It must be recalculated when you change the Preferred delivery options with this button."
+msgstr ""
+" Цената за доставка се изчислява "
+"автоматично когато въведете своя "
+"адрес. Ако направите промени в "
+"\"Предпочитани опции за доставка\" "
+"трябва да преизчислите цената чрез "
+"този бутон."
+
+#: uc_econt.module:79;186
+msgid "Street other"
+msgstr "пояснение за адреса"
+
+#: uc_econt.module:81;188
+msgid "Other details of the address."
+msgstr "Други пояснения за адреса."
+
+#: uc_econt.module:89
+msgid "Econt Prefered delivery options"
+msgstr "Предпочитани опции за доставка"
+
+#: uc_econt.module:90
+msgid "Prefered options for delivery."
+msgstr "Допълнителни опции за доставка."
+
+#: uc_econt.module:101
+msgid "Includes insurance."
+msgstr ""
+"Обявена стойност 0,24% от сумата на "
+"поръчката Ви."
+
+#: uc_econt.module:112
+msgid "Delivery to"
+msgstr "Доставка до"
+
+#: uc_econt.module:123
+msgid "Delivery day"
+msgstr "Ден за доставка"
+
+#: uc_econt.module:126
+msgid "When delivered on Saturday Preferred time options are required."
+msgstr ""
+"При избор на ден за доставка Събота, "
+"автоматично се начислява услугата Час "
+"за приоритет."
+
+#: uc_econt.module:133
+msgid "Prefered time type"
+msgstr "Час за приоритет - опции"
+
+#: uc_econt.module:136
+msgid "Preferred time type for receipt of delivery."
+msgstr ""
+"Предпочитано време за получаване на "
+"доставката."
+
+#: uc_econt.module:141
+msgid "Prefered time"
+msgstr "Предпочитано време"
+
+#: uc_econt.module:142
+msgid "Preferred time value for receipt of delivery. Example: 14:30"
+msgstr ""
+"Предпочитано време за получаване на "
+"доставката. Например: 14:30"
+
+#: uc_econt.module:151
+msgid "City express"
+msgstr "Градска експресна доставка"
+
+#: uc_econt.module:152;161
+msgid "Express services are only for delivery from door to door."
+msgstr ""
+"Експресните услуги са валидни само за "
+"доставка от Врата до Врата."
+
+#: uc_econt.module:160
+msgid "Intercity express"
+msgstr "Междуградска експресна доставка"
+
+#: uc_econt.module:169
+msgid "More info"
+msgstr "Повече информация"
+
+#: uc_econt.module:170
+msgid "More info about express services on <a href=\"@url\" target=\"_blank\">Econt site</a>"
+msgstr ""
+"Повече информация за експресните "
+"услуги може да намерите на сайта на <a "
+"href=\"@url\" target=\"_blank\">Econt</a>"
+
+#: uc_econt.module:207;214
+msgid "Full name is empty. Please enter the full name of the recipient."
+msgstr ""
+
+#: uc_econt.module:389;610;614;619;627
+msgid "ECONT shipping services"
+msgstr "Еконт спедиторски услуги"
+
+#: uc_econt.module:611
+msgid "delivery date"
+msgstr "доставка на"
+
+#: uc_econt.module:619
+msgid "no connection to ECONT website"
+msgstr "няма връзка със сайта на ECONT"
+
+#: uc_econt.module:619
+msgid "fixed price"
+msgstr "фиксирана цена"
+
+#: uc_econt.module:627
+msgid "Delivery shall be paid from the store"
+msgstr "Доставката се плаща от магазина"
+
+#: uc_econt.module:743
+msgid "Shipping quote from ECONT"
+msgstr ""
+
+#: uc_econt.module:750
+msgid "Fetch a shipping quote"
+msgstr ""
+
+#: uc_econt.module:928
+msgid "This product is insured for the time of delivery."
+msgstr ""
+"Стоката е застрахована за времето на "
+"доставяне."
+
+#: uc_econt.module:931
+msgid "This product is insured for the time of delivery, if enable Prefered options -> Declared value. Orders above @auto_declared_value BGN. always be insured."
+msgstr ""
+"Стоката се застрахова за времето на "
+"доставяне, когато включите "
+"Предпочитани опции за доставка -> "
+"Обявена стойност. Поръчки над "
+"@auto_declared_value лв. винаги се застраховат."
+
+#: uc_econt.module:935
+msgid "Returns the expense of store."
+msgstr ""
+"Търговецът желае при отказ на "
+"пратката да заплати връщането й."
+
+#: uc_econt.module:938
+msgid "Shipping & Returns the order at the expense of store."
+msgstr ""
+"Търговецът желае при отказ на "
+"пратката да заплати доставката и "
+"връщането й."
+
+#: uc_econt.module:941
+msgid "Shipping & Returns the order at the expense of receiver."
+msgstr ""
+"При отказ на пратката доставката и "
+"връщането е за сметка на получателя."
+
+#: uc_econt.module:945
+msgid "Стоката ще пътува с Обратна разписка."
+msgstr ""
+"В куриерската пратка е включена "
+"обратна разписка."
+
+#: uc_econt.module:948
+msgid "Стоката ще пътува със Стокова + обратна разписка."
+msgstr ""
+"В куриерската пратка е включена "
+"обратна и стокова разписка."
+
+#: uc_econt.module:516
+msgid "No store pickup address specified"
+msgstr ""
+
+#: uc_econt.module:616
+msgid "error: @error, error_code: @error_code"
+msgstr ""
+
+#: uc_econt.module:622
+msgid "No connection to ECONT website, fixed price @fixed_price on order @order_id"
+msgstr ""
+
+#: uc_econt.module:829
+msgid "test @post_code"
+msgstr ""
+
+#: uc_econt.module:901
+msgid "clear @post_code"
+msgstr ""
+
+#: uc_econt.module:306
+msgid "ECONT quote"
+msgstr ""
+
+#: uc_econt.module:315
+msgid "ECONT shipping"
+msgstr "ECONT доставка"
+
+#: uc_econt.module:322
+msgid "ECONT reports"
+msgstr ""
+
+#: uc_econt.module:329
+msgid "Autocomplete field city"
+msgstr ""
+
+#: uc_econt.module:335
+msgid "post code callback"
+msgstr ""
+
+#: uc_econt.module:341
+msgid "Autocomplete field street"
+msgstr ""
+
+#: uc_econt.module:348
+msgid "city street callback"
+msgstr ""
+
+#: uc_econt.module:355
+msgid "prefered deliveri date if friday"
+msgstr ""
+
+#: uc_econt.module:361
+msgid "econt offices in city callback"
+msgstr ""
+
+#: uc_econt.module:367
+msgid "econt user selected office"
+msgstr ""
+
+#: uc_econt.info:0
+msgid "ECONT shipping method"
+msgstr ""
+
+#: uc_econt.info:0
+msgid "Integration of ECONT shipping Calculator with Ubercart."
+msgstr ""
+
+#: uc_econt.info:0
+msgid "Ubercart - fulfillment"
+msgstr ""
+

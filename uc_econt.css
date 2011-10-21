@@ -1,0 +1,35 @@
+.post-code,
+.office,
+.dday {
+  border-bottom: solid 1px #027AC6;
+  color: green;
+  cursor: pointer;
+  padding: 0 5px;
+  margin-right: 4px;
+}
+
+.e-plug:hover {
+  cursor: pointer;
+}
+
+.office-locator {
+  width: 100%;
+  padding: 0 20px;
+}
+
+.office:hover {
+  border: solid 1px green;
+}
+
+.selected {
+  font-weight: bold;
+}
+
+#edit-panes-delivery-pref-opts-prefered-delivery-day-wrapper {
+  display: inline;
+  width: 100px;
+}
+
+.hideme {
+  display: none;
+}

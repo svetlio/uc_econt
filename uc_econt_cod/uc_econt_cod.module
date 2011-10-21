@@ -1,0 +1,276 @@
+<?php
+
+/**
+ * @file Provides Econt COD payment methods.
+ */
+
+/*******************************************************************************
+ * Hook Functions (Drupal)
+ ******************************************************************************/
+
+/**
+ * Implementation of hook_init().
+ */
+function uc_econt_cod_init() {
+  global $conf;
+  $conf['i18n_variables'][] = 'uc_econt_cod_policy';
+}
+
+/**
+ * Implementation of hook_payment_method().
+ */
+function uc_econt_cod_payment_method() {
+
+  $methods[] = array(
+    'id' => 'uc_econt_cod',
+    'name' => t('Econt COD'),
+    'title' => t('Econt cash on delivery'),
+    'desc' => t('Pay cash on delivery on pick-up.'),
+    'callback' => 'uc_econt_method_cod',
+    'weight' => 1,
+    'checkout' => FALSE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+
+/**
+ * Implementation of hook_form_alter().
+*/ 
+function uc_econt_cod_form_alter(&$form, &$form_state, $form_id) {
+  //drupal_set_message($form_id);
+  if ($form_id == 'uc_cart_checkout_form') {
+    foreach ($form['panes']['payment']['payment_method']['#options'] as $key => $value) {
+      if ($key == 'uc_econt_cod') { //!empty($adjustment)) {
+//        $form['panes']['payment']['payment_method']['#options']['uc_econt_cod'] .= '<div class="description" style="padding-left: 2.5em;">'. t("Click on Econt COD to calculate tax") .'</div>';
+      }
+    }
+    if (isset($form['panes']['payment'])) {
+      drupal_add_js(drupal_get_path('module', 'uc_econt_cod') .'/uc_econt_cod.js');
+      drupal_add_js("\$(document).ready( function () { update_method_line_item('". $form['panes']['payment']['payment_method']['#default_value'] ."'); } );", 'inline');
+    }
+  }
+  
+  if ($form_id == 'uc_cart_checkout_review_form') {
+    $order = uc_order_load(intval($_SESSION['cart_order']));
+    if ($order -> payment_method == 'uc_econt_cod') {
+      if (variable_get('uc_econt_invoice_before_pay', '1')) {
+        $message[] = t('Invoice before pay enabled.');
+      }
+      if (variable_get('uc_econt_pay_after_accept', '1')) {
+        $message[] = t('Pay after accept enabled.');
+      }
+      if (variable_get('uc_econt_pay_after_test', '1')) {
+        $message[] = t('Pay after test enabled.');
+      }
+      $message = implode(' ', $message);
+      drupal_set_message($message);
+    }
+  }
+}
+
+/**
+ * Implementation of hook_line_item().
+ */
+function uc_econt_cod_line_item() {
+  $items[] = array(
+    'id' => 'payment_method',
+    'title' => t('Payment method'),
+    'weight' => 2,
+    'stored' => TRUE,
+    'default' => FALSE,
+    'calculated' => TRUE,
+    'add_list' => TRUE,
+    'display_only' => FALSE,
+//    'callback' => 'econt_cod_line_item_callback',
+  );
+
+  return $items;
+}
+
+/**
+ * Implementation of hook_order().
+ */
+function uc_econt_cod_order($op, &$arg1) {
+  switch ($op) {     
+    case 'save':
+      $adjustment = _payment_method_adjustment($arg1 -> payment_method);
+      db_query("DELETE FROM {uc_order_line_items} WHERE order_id = %d AND type = 'payment_method'", $arg1->order_id);
+       
+      if ($arg1 -> payment_method == 'uc_econt_cod' && variable_get('uc_econt_cod_tax', 0) < 1) {
+        uc_order_line_item_add($arg1->order_id, 'payment_method', $adjustment['description'], $adjustment['value'], 1);
+      }
+        
+      break;
+  }
+}
+function _payment_method_adjustment($payment_method) {
+  $sess_id = session_id();
+  $key = 'delivery_price_tax';
+  
+  if ($payment_method == 'uc_econt_cod' && variable_get('uc_econt_cod_tax', 0) == 0) {
+    $ret = array();
+    $ret['description'] = t('Econt COD tax'); 
+    $ret['value'] = db_result(db_query("SELECT val FROM {uc_econt_sess} WHERE sess_id = '%s'", $sess_id));
+  }
+  else {
+    $ret['value'] = '0';
+  }
+
+  return $ret;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function uc_econt_cod_menu() {
+  $items['cart/checkout/method_items_ecod'] = array(
+    'title' => 'Return payment method subtotal adjustments',
+    'page callback' => 'uc_econt_cod_method_items',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+function uc_econt_cod_method_items($payment_method = 'uc_econt_cod') {
+  drupal_set_header("Content-Type: text/javascript; charset=utf-8");
+  $order = $_POST['order'];
+  if ($order = unserialize(rawurldecode($order))) {
+    $order->payment_method = $payment_method;
+    $adjustment = _payment_method_adjustment($payment_method);
+   
+    print $adjustment['value'] .'|'. $adjustment['description'];
+  }
+  exit();
+}
+
+/**
+ * Handle the Cash on Delivery payment method.
+ */
+function uc_econt_method_cod($op, &$arg1) {
+  switch ($op) {
+    case 'cart-details':
+       
+        $context = array(
+          'revision' => 'formatted-original',
+          'type' => 'amount',
+        );
+//        $details .= '<p>'. t('Orders totalling more than !number are <b>not eligible</b> for Econt COD.', array('!number' => uc_price($max, $context))) .'</p>';
+//      }
+      /*
+      if (variable_get('uc_econt_cod_delivery_date', FALSE)) {
+        $details .= uc_strip_form(drupal_get_form('uc_econt_method_cod_form', $arg1));
+      }*/
+      return $details;
+
+    case 'cart-process':
+      
+      /*
+      if (variable_get('uc_econt_cod_delivery_date', FALSE)) {
+        $arg1->payment_details['delivery_month'] = intval($_POST['cod_delivery_month']);
+        $arg1->payment_details['delivery_day'] = intval($_POST['cod_delivery_day']);
+        $arg1->payment_details['delivery_year'] = intval($_POST['cod_delivery_year']);
+      }
+      return TRUE;
+      */
+
+    case 'cart-review':
+      /*
+      if (variable_get('uc_econt_cod_delivery_date', FALSE)) {
+        $date = uc_date_format($arg1->payment_details['delivery_month'],
+                               $arg1->payment_details['delivery_day'],
+                               $arg1->payment_details['delivery_year']);
+        $review[] = array('title' => t('Delivery Date'), 'data' => $date);
+      }
+      return $review;
+      */
+
+    case 'order-view':
+    case 'customer-view':
+
+    case 'order-details':/*
+      if (variable_get('uc_econt_cod_delivery_date', FALSE)) {
+        $details .= uc_strip_form(drupal_get_form('uc_econt_method_cod_form', $arg1));
+      }
+      return $details;*/
+
+    case 'edit-process':/*
+      if (variable_get('uc_econt_cod_delivery_date', FALSE)) {
+        return array(
+          'payment_details' => array(
+            'delivery_month' => intval($_POST['cod_delivery_month']),
+            'delivery_day' => intval($_POST['cod_delivery_day']),
+            'delivery_year' => intval($_POST['cod_delivery_year']),
+          ),
+        );
+      }
+      return;*/
+
+    case 'order-load':
+    /*
+      $result = db_query("SELECT * FROM {uc_econt_cod} WHERE order_id = %d", $arg1->order_id);
+      if ($row = db_fetch_object($result)) {
+        $arg1->payment_details['delivery_month'] = $row->delivery_month;
+        $arg1->payment_details['delivery_day'] = $row->delivery_day;
+        $arg1->payment_details['delivery_year'] = $row->delivery_year;
+      }
+      break;*/
+
+    case 'order-submit':/*
+      if ($arg1->payment_method == 'econt_cod' &&
+          ($max = variable_get('uc_econt_cod_max_order', 0)) > 0 &&
+          is_numeric($max) &&
+          $arg1->order_total > $max) {
+          $result[] = array(
+            'pass' => FALSE,
+            'message' => t('Your final order total exceeds the maximum for COD payment.  Please go back and select a different method of payment.')
+          );
+          $_SESSION['expanded_panes'][] = 'payment';
+          return $result;
+      }*/
+    case 'order-save':
+      db_query("DELETE FROM {uc_econt_cod} WHERE order_id = %d", $arg1->order_id);
+      db_query("INSERT INTO {uc_econt_cod} VALUES (%d, %d, %d)",
+               $arg1->order_id, $arg1->payment_details['tax'],
+               $arg1->payment_details['status']);
+      break;
+
+    case 'order-delete':
+      db_query("DELETE FROM {uc_econt_cod} WHERE order_id = %d", $arg1->order_id);
+      break;
+
+    case 'settings':
+      $form['uc_econt_cod_policy'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Policy message'),
+        '#default_value' => variable_get('uc_econt_cod_policy', t('Full payment is expected upon delivery or prior to pick-up.')),
+        '#description' => t('Help message shown at checkout.'),
+      );
+      $form['uc_econt_cod_tax'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Econt COD fee is charged to the store'),
+        '#default_value' => variable_get('uc_econt_cod_tax', 0),
+        '#description' => t('When this option is enabled, the fee for cash at the expense of the store.'),
+      );
+       
+      return $form;
+  }
+}
+
+
+function uc_econt_method_cod_form($form_state, $order) {
+  $form['table1'] = array('#value' => '<style>.cod-table div, .cod-table { display: inline; }.cod-table tbody { border-top: 0px; }</style><table class="cod-table"><tr><td class="form-item" colspan="3"><label>'. t('Enter a desired delivery date:') .'</label></td></tr><tr><td>');
+  $month = (!empty($order->payment_details['delivery_month'])) ? $order->payment_details['delivery_month'] : format_date(time(), 'custom', 'n');
+  $form['cod_delivery_month'] = uc_select_month(NULL, $month);
+  $form['table2'] = array('#value' => '</td><td>');
+  $day = (!empty($order->payment_details['delivery_day'])) ? $order->payment_details['delivery_day'] : format_date(time(), 'custom', 'j');
+  $form['cod_delivery_day'] = uc_select_day(NULL, $day);
+  $form['table3'] = array('#value' => '</td><td>');
+  $year = (!empty($order->payment_details['delivery_year'])) ? $order->payment_details['delivery_year'] : format_date(time(), 'custom', 'Y');
+  $form['cod_delivery_year'] = uc_select_year(NULL, $year, format_date(time(), 'custom', 'Y'), format_date(time(), 'custom', 'Y') + 1);
+  $form['table4'] = array('#value' => '</td></tr></table>');
+
+  return $form;
+}
