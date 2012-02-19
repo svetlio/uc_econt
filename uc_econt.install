@@ -155,13 +155,6 @@ function uc_econt_shipping_schema() {
         'not null' => FALSE,
         'default' => 0.0,
       ),
-      'cod_tax' => array(
-        'description' => 'COD tax.',
-        'type' => 'varchar',
-        'length' => 11,
-        'not null' => FALSE,
-        'default' => 0,
-      ),
       'currency' => array(
         'description' => 'Currency.',
         'type' => 'varchar',

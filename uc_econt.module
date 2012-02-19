@@ -242,8 +242,6 @@ function ucecontshipping_submit_handler(&$form, $form_state) {
   $prefered_time_type = $_SESSION['prefered_time_type'];
   $prefered_time_value = $_SESSION['prefered_time_value'];
   $city_express = $_SESSION['city_express'];
-  $delivery_price = $_SESSION['delivery_price'];
-  $cod_tax = $_SESSION['cod_tax'];
   
   $total_delivery_price = $_SESSION['delivery_price'];
   $currency = $_SESSION['currency'];
@@ -272,7 +270,6 @@ function ucecontshipping_submit_handler(&$form, $form_state) {
              prefered_time_value = '%s',
              city_express = '%d',
              delivery_price = '%s',
-             cod_tax = '%s',
              loading_id = '%s',
              loading_num = '%s',
              currency = '%s'  WHERE order_id = %d",
@@ -292,16 +289,15 @@ function ucecontshipping_submit_handler(&$form, $form_state) {
              $prefered_time_value,
              $city_express,
              $delivery_price,
-             $cod_tax,
              $loading_id,
              $loading_num,
              $currency,
              $order_id);
   }
   else {
-    db_query("INSERT INTO {uc_econt_shipping} (order_id, pay_delivery_side, delivery_payment_method, tariff_code, tariff_subcode, declared_value, shipping_to, selected_office, delivery_date, service_e, service_e1, service_e2, service_e3, prefered_time_type, prefered_time_value, city_express, delivery_price, cod_tax, loading_id, loading_num, currency)
-            VALUES ('%d', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',  '%s', '%d', '%s', '%s', '%s', '%s', '%s')",
-            $order_id, $pay_delivery_side, $delivery_payment_method, $tariff_code, $tariff_subcode, $declared_value, $shipping_to, $selected_office, $delivery_date, $service_e, $service_e1, $service_e2, $service_e3, $prefered_time_type, $prefered_time_value, $city_express, $delivery_price, $cod_tax, $loading_id, $loading_num, $currency);
+    db_query("INSERT INTO {uc_econt_shipping} (order_id, pay_delivery_side, delivery_payment_method, tariff_code, tariff_subcode, declared_value, shipping_to, selected_office, delivery_date, service_e, service_e1, service_e2, service_e3, prefered_time_type, prefered_time_value, city_express, delivery_price, loading_id, loading_num, currency)
+            VALUES ('%d', '%s', '%s', '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s',  '%s', '%d', '%s', '%s', '%s', '%s')",
+            $order_id, $pay_delivery_side, $delivery_payment_method, $tariff_code, $tariff_subcode, $declared_value, $shipping_to, $selected_office, $delivery_date, $service_e, $service_e1, $service_e2, $service_e3, $prefered_time_type, $prefered_time_value, $city_express, $delivery_price, $loading_id, $loading_num, $currency);
   }
 }
 
@@ -551,7 +547,6 @@ function uc_econt_quote($products, $details, $method) {
     $curl_error = curl_error($ch);
     curl_close($ch);
     //watchdog('uc_econt', '@error', array('@error' => $xmlStr), WATCHDOG_NOTICE);
-    watchdog('uc_econt', '@resp', array('@resp' => $responseResult), WATCHDOG_NOTICE);
     
     if (file_exists($sTmpFileNameSess)) {
       //unlink($sTmpFileNameSess);
@@ -583,7 +578,6 @@ function uc_econt_quote($products, $details, $method) {
     if ($info['http_code'] == 200 && $delivery_date) {
       $_SESSION['delivery_date'] = $delivery_date;
       $_SESSION['delivery_price'] = $delivery_price;
-      $_SESSION['cod_tax'] = $delivery_price_tax;
       
       $sess_id = session_id();
       $key = 'delivery_price_tax';

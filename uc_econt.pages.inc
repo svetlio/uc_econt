@@ -206,8 +206,6 @@ function application_delivery_for_order_submit($form, &$form_state) {
   //drupal_set_message($output);
   
   _econt_cod_cd_type($order_id);// $payment_method);
-  
-  _receiver_share_sum($order_id);
 
 //  delivery_weight
   $delivery_weight = _delivery_weight($order_id);
@@ -389,17 +387,7 @@ function check_delivery_status_submit($form, &$form_state) {
 
 //payment side
 function _payment_side($arg1) {
-  if (variable_get('uc_econt_cod_tax', 0)) {
-    $payment_side['payment_side'] = 'SENDER';
-    //$payment_side['payment_side'] = strtoupper(db_result(db_query("SELECT pay_delivery_side FROM {uc_econt_shipping} WHERE order_id = '%s'", $arg1)));
-    $payment_side['share_sum'] = db_result(db_query("SELECT delivery_price FROM {uc_econt_shipping} WHERE order_id = '%s'", $arg1));
-    //$payment_side['share_sum'] = db_result(db_query("SELECT cod_tax FROM {uc_econt_shipping} WHERE order_id = '%s'", $arg1));
-  }
-  else {
-    $payment_side['payment_side'] = strtoupper(db_result(db_query("SELECT pay_delivery_side FROM {uc_econt_shipping} WHERE order_id = '%s'", $arg1)));
-    $payment_side['share_sum'] = 0;
-  }
-  return $payment_side;
+  return strtoupper(db_result(db_query("SELECT pay_delivery_side FROM {uc_econt_shipping} WHERE order_id = '%s'", $arg1)));
 }
 
 //tariff_code
@@ -522,17 +510,6 @@ function _receiver_address($arg1) {
   $receiver_addr['uid'] = $order -> uid;
   
   return $receiver_addr;
-}
-
-/**
- * set session cod_tax string if store pay cod tax is enabled
- */
-function _receiver_share_sum($order_id) {
-  
-  if(variable_get('uc_econt_cod_tax', 0)) {
-    $cod_tax = db_result(db_query("SELECT cod_tax FROM {uc_econt_shipping} WHERE order_id = '%s'", $order_id));
-    $_SESSION['cod_tax'] = $cod_tax;
-  }
 }
 
 //order weight
