@@ -268,7 +268,7 @@
         
           $side = $doc -> createElement('side');
           $side = $payment->appendChild($side);
-          $side_val = $doc->createTextNode($payment_side);//SENDER, RECEIVER
+          $side_val = $doc->createTextNode($payment_side['payment_side']);//SENDER, RECEIVER
           $side_val = $side->appendChild($side_val);
 		  
 		  $method = $doc -> createElement('method');
@@ -280,6 +280,11 @@
           $key_word = $payment->appendChild($key_word);
           $key_word_val = $doc->createTextNode(variable_get('uc_econt_credit_customer_number', ''));
           $key_word_val = $key_word->appendChild($key_word_val);
+          
+          $receiver_share_sum = $doc -> createElement('receiver_share_sum');
+          $receiver_share_sum = $payment->appendChild($receiver_share_sum);
+          $receiver_share_sum_val = $doc->createTextNode($payment_side['share_sum']);
+          $receiver_share_sum_val = $receiver_share_sum->appendChild($receiver_share_sum_val);
          
         #services
         $services = $doc->createElement('services');

@@ -98,7 +98,7 @@ function uc_econt_cod_order($op, &$arg1) {
       $adjustment = _payment_method_adjustment($arg1 -> payment_method);
       db_query("DELETE FROM {uc_order_line_items} WHERE order_id = %d AND type = 'payment_method'", $arg1->order_id);
        
-      if ($arg1 -> payment_method == 'uc_econt_cod') {
+      if ($arg1 -> payment_method == 'uc_econt_cod' && variable_get('uc_econt_cod_tax', 0) < 1) {
         uc_order_line_item_add($arg1->order_id, 'payment_method', $adjustment['description'], $adjustment['value'], 1);
       }
         
@@ -109,10 +109,10 @@ function _payment_method_adjustment($payment_method) {
   $sess_id = session_id();
   $key = 'delivery_price_tax';
   
-  if ($payment_method == 'uc_econt_cod') {
-  $ret = array();
-  $ret['description'] = t('Econt COD tax'); 
-  $ret['value'] = db_result(db_query("SELECT val FROM {uc_econt_sess} WHERE sess_id = '%s'", $sess_id));
+  if ($payment_method == 'uc_econt_cod' && variable_get('uc_econt_cod_tax', 0) == 0) {
+    $ret = array();
+    $ret['description'] = t('Econt COD tax'); 
+    $ret['value'] = db_result(db_query("SELECT val FROM {uc_econt_sess} WHERE sess_id = '%s'", $sess_id));
   }
   else {
     $ret['value'] = '0';
@@ -231,10 +231,10 @@ function uc_econt_method_cod($op, &$arg1) {
           return $result;
       }*/
     case 'order-save':
-/*      db_query("DELETE FROM {uc_econt_cod} WHERE order_id = %d", $arg1->order_id);
-      db_query("INSERT INTO {uc_econt_cod} VALUES (%d, %d, %d, %d)",
-               $arg1->order_id, $arg1->payment_details['delivery_month'],
-               $arg1->payment_details['delivery_day'], $arg1->payment_details['delivery_year']);*/
+      db_query("DELETE FROM {uc_econt_cod} WHERE order_id = %d", $arg1->order_id);
+      db_query("INSERT INTO {uc_econt_cod} VALUES (%d, %d, %d)",
+               $arg1->order_id, $arg1->payment_details['tax'],
+               $arg1->payment_details['status']);
       break;
 
     case 'order-delete':
@@ -247,6 +247,12 @@ function uc_econt_method_cod($op, &$arg1) {
         '#title' => t('Policy message'),
         '#default_value' => variable_get('uc_econt_cod_policy', t('Full payment is expected upon delivery or prior to pick-up.')),
         '#description' => t('Help message shown at checkout.'),
+      );
+      $form['uc_econt_cod_tax'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Econt COD fee is charged to the store'),
+        '#default_value' => variable_get('uc_econt_cod_tax', 0),
+        '#description' => t('When this option is enabled, the fee for cash at the expense of the store.'),
       );
        
       return $form;
