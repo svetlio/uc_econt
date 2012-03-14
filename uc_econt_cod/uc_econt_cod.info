@@ -4,4 +4,4 @@ dependencies[] = uc_cart
 dependencies[] = uc_payment
 dependencies[] = uc_econt
 package = "Ubercart - payment"
-core = 6.x
+core = 7.x

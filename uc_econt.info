@@ -1,9 +1,8 @@
-name = ECONT shipping method
+name = ECONT shipping
 description = Integration of ECONT shipping Calculator with Ubercart.
 dependencies[] = uc_shipping
 dependencies[] = uc_quote
-dependencies[] = jquery_update
 package = Ubercart - fulfillment
-core = 6.x
+core = 7.x
 
 
