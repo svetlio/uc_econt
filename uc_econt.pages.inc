@@ -546,6 +546,41 @@ function _delivery_weight($arg1) {
   return $delivery_weight;
 }
 
+//download remote data for cities, streets,quarters, offices in separated files
+function _econt_data_download() {
+  $output = '';
+  
+  $output = 'download remote data for cities, streets,quarters, offices in separated files';
+  
+  //include_once('include/uc_econt.xml_query_application_delivery.inc');
+  
+  $file_to_send = drupal_get_path('module', 'uc_econt') . '/include/get_cities_query.xml';
+  $eecont_tool_url = _eecont_url();
+  
+  $ch = curl_init($eecont_url[1]); //!!!!! _
+  curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$file_to_send"));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+  $responseResult = curl_exec($ch);
+  $info = curl_getinfo($ch);
+  $curl_error = curl_error($ch);
+  curl_close($ch);
+  
+  //watchdog('uc_econt', '@xmlStr', array('@xmlStr' => $responseResult), WATCHDOG_NOTICE);
+  //drupal_set_message($xmlStr);
+  
+  if ($responseResult) {
+    //filepath
+    $sTmpFileName =  file_directory_path() . '/data/offices.xml';
+    //create file
+    file_put_contents($sTmpFileName, $responseResult);
+    
+    $output .= $responseResult;
+  }
+  
+  return $output;
+}
+
 include_once('include/funcs.inc.php');
 include_once('include/xml2array.inc.php');
 include_once('include/xmlobj2array.inc.php');

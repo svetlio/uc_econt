@@ -334,6 +334,13 @@ function uc_econt_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'uc_econt.pages.inc',
   );
+  $items['admin/store/settings/quotes/methods/econt/econt_data_download'] = array(
+    'title' =>'ECONT data download',
+    'page callback' => '_econt_data_download',
+    'access arguments' => array('configure quotes'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'uc_econt.pages.inc',
+  );
   $items['city/autocomplete'] = array(
     'title' => 'Autocomplete field city',
     'page callback' => '_city_autocomplete',
