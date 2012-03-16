@@ -557,7 +557,7 @@ function _econt_data_download() {
   $file_to_send = drupal_get_path('module', 'uc_econt') . '/include/get_cities_query.xml';
   $eecont_tool_url = _eecont_url();
   
-  $ch = curl_init($eecont_url[1]); //!!!!! _
+  $ch = curl_init($eecont_url[1]); //!!!!! _ 
   curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$file_to_send"));
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
   curl_setopt($ch, CURLOPT_TIMEOUT, 3);
