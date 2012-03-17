@@ -19,3 +19,13 @@ http://d-support.eu/node/53.
 
 Questions on the module you can set the forum site http://d-support.eu/forum,
 through the contact form, email econt at d-support.eu, and Issue to the module.
+
+UPDATE 1
+
+Download and import some necessary data:
+Download data is not fully automated - you must run download procces for each of
+cities, quarters, streets and offices tables manualy -
+admin/store/settings/quotes/methods/econt/econt_data_download
+Then visit and imort downloaded data
+admin/store/settings/quotes/methods/econt/econt_data_import
+
