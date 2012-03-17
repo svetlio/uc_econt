@@ -15,44 +15,40 @@ function _econt_shipping_orders() {
 function _econt_shipping_reports() {
   $page_content = t('Econt shipping Reports with statuses') . '<p>';
   
-  $file_cities = drupal_get_path('module', 'uc_econt') . '/data/xml_service_tool.php.cities.xml';
-  $file_quarters = drupal_get_path('module', 'uc_econt') . '/data/xml_service_tool.php.quarters.xml';
-  $file_streets = drupal_get_path('module', 'uc_econt') . '/data/xml_service_tool.php.streets.xml';
-  $file_offices = drupal_get_path('module', 'uc_econt') . '/data/xml_service_tool.php.offices.xml';
+  $data_type = array('cities', 'quarters', 'streets', 'offices');
+  
+  foreach ($data_type AS $type) {
+    $filename = file_directory_path() . '/' . $type . '.xml';
 
+    $objFopen = fopen($filename,"r");
+    $page_content .= '<h2>' . $type . '</h2>';
+    $page_content .= "Files Size = ".filesize($filename) . "<br>";
+    $page_content .= "Modify Date = ".date( "D d M Y g:i A", filemtime($filename)) . "<br>";
+    $page_content .= "Last Updated Time = ".date( "D d M Y g:i A", filemtime($filename)) . "<p>";
+    
+    if ($type == 'cities') {
+      $col = 'cid';
+    }
+    elseif ($type == 'offices' || $type == 'streets' || $type == 'quarters') {
+      $col = 'id';
+    }
+    
+    $page_content .= db_result(db_query("SELECT COUNT(" . $col . ") FROM {uc_econt_" . $type . "}")) . ' ' . t('row');
+    
+    fclose ($objFopen);
+    $page_content .= '<p>-------------------------------------------------------<p>';
+    
+    $page_content .= drupal_get_form('import_update_tbl_data_form', $type);
+    $page_content .= '<p>=======================================================<p>';
+  }
+  
+/*
   $cities_exist = db_result(db_query("SELECT COUNT(post_code) FROM {uc_econt_cities}"));
   $quarters_exist = db_result(db_query("SELECT COUNT(city_post_code) FROM {uc_econt_quarters}"));
   $streets_exist = db_result(db_query("SELECT COUNT(name) FROM {uc_econt_streets}"));
   $offices_exist = db_result(db_query("SELECT COUNT(id) FROM {uc_econt_offices}"));
+*/
 
-
-  if (file_exists($file_cities) && !$cities_exist) {
-    $xml = simplexml_load_file($file_cities, 'SimpleXMLElement', LIBXML_NOCDATA);
-    $p_cnt = count($xml->cities->e);
-    $data = amstore_xmlobj2array($xml, 3);
-    for($i = 0; $i < $p_cnt; $i++) {
-      $vals = array();
-      foreach ($data['cities']['cities'][$i] as $key => $val) {
-        $vals[] = '\'' . $val . '\'';
-        $values = implode(', ', $vals);
-      }
-      db_query("INSERT INTO {uc_econt_cities} (id, post_code, type, id_zone, name, name_en, id_country, id_office) VALUES(" . $values . ")");
-    }
-  }
-
-  if (file_exists($file_quarters) && !$quarters_exist) {
-    $xml = simplexml_load_file($file_quarters, 'SimpleXMLElement', LIBXML_NOCDATA);
-    $p_cnt = count($xml->cities_quarters->e);
-    $data = amstore_xmlobj2array($xml, 2);
-    for($i = 1; $i < $p_cnt; $i++) {
-      $vals = array();
-      foreach ($data['cities_quarters']['cities_quarters'][$i] as $key => $val) {
-        $vals[] = '\'' . $val . '\'';
-        $values = implode(', ', $vals);
-      }
-      db_query("INSERT INTO {uc_econt_quarters} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
-    }
-  }
   
   if (file_exists($file_streets) && !$streets_exist) {
     $xml = simplexml_load_file($file_streets, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -92,25 +88,175 @@ function _econt_shipping_reports() {
       db_query("INSERT INTO {uc_econt_offices} (id, name, office_code, address, id_city) VALUES(" . $values . ")");
     }
   }
-  
-    //$page_content .= 'Failed to open file or data already imported.';
-    if ($cities_exist) {
-      $page_content .= 'total ' . $cities_exist . ' cities<p>';
-    }
-    if ($quarters_exist) {
-      $page_content .= 'total ' . $quarters_exist . ' quarters<p>';
-    }
-    if ($streets_exist) {
-      $page_content .= 'total ' . $streets_exist . ' streets<p>';
-    }
-    if ($offices_exist) {
-      $page_content .= 'total ' . $offices_exist . ' offices<p>';
-    }
-    
-  
-  $page_content .= $p_cnt;
 
   return $page_content;
+}
+
+function import_update_tbl_data_form($form_state, $type) {
+  $form = array();
+  
+  $form['import_type'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $type,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import') . ' ' . $type,
+    '#name' => $type,
+  );
+
+  return $form;
+}
+
+function import_update_tbl_data_form_submit($form, &$form_state) {
+  $type = $form_state['values']['import_type'];
+  $filename = file_directory_path() . '/' . $type . '.xml';
+  
+  switch($type) {
+    case 'cities':
+      batch_set(batch_import_cities($filename));
+      break;
+    case 'offices':
+      batch_set(batch_import_offices($filename));
+      break;
+    case 'streets':
+      batch_set(batch_import_streets($filename));
+      break;
+    case 'quarters':
+      batch_set(batch_import_quarters($filename));
+      break;
+  }
+}
+
+/**
+ * Batch cities update
+ */
+function batch_import_cities($filename) {
+  $xml = simplexml_load_file($filename, 'SimpleXMLElement', LIBXML_NOCDATA);
+  $p_cnt = count($xml->cities->e);
+  $data = amstore_xmlobj2array($xml, 3);
+  
+  $operations = array();
+  for ($i = 0; $i < $p_cnt; $i++) {
+    $data_city = $data['cities']['cities'][$i];
+    $operations[] = array('batch_import_data_op_cities', array($data_city));
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'batch_import_data_finished',
+  );
+  
+  return $batch;
+}
+
+/**
+ * Batch operation for batch cities
+ */
+function batch_import_data_op_cities($data_city, &$context) {
+  $vals = array();
+  
+  foreach ($data_city as $key => $val) {
+    $vals[] = '\'' . $val . '\'';
+  }
+  
+  $name_val_arr = array(
+    //'id' => $vals[0],
+    "post_code=$vals[1]",
+    "type=$vals[2]",
+    "id_zone=$vals[3]",
+    "name=$vals[4]",
+    "name_en=$vals[5]",
+    "id_country=$vals[6]",
+    "id_office=$vals[7]"
+  );
+  
+  $id = str_replace('\'', '', $vals[0]);
+  $exist = db_result(db_query("SELECT id FROM {uc_econt_cities} WHERE id=%d", $id));
+  
+  if ($exist) {
+    $name_val_list = implode(',', $name_val_arr);
+    //update row
+    db_query("UPDATE {uc_econt_cities} SET " . $name_val_list . " WHERE id=%d", $id);
+  }
+  else {
+    $values = implode(', ', $vals);
+    //insert
+    db_query("INSERT INTO {uc_econt_cities} (id, post_code, type, id_zone, name, name_en, id_country, id_office) VALUES(" . $values . ")");
+  }
+}
+
+/**
+ * Batch quarters update
+ */
+function batch_import_quarters($filename) {
+  $xml = simplexml_load_file($filename, 'SimpleXMLElement', LIBXML_NOCDATA);
+  $p_cnt = count($xml->cities_quarters->e);
+  $data = amstore_xmlobj2array($xml, 3);
+  
+  $operations = array();
+  for ($i = 0; $i < $p_cnt; $i++) {
+    $data_quarter = $data['cities_quarters']['cities_quarters'][$i];
+    $operations[] = array('batch_import_data_op_quarters', array($data_quarter));
+    
+    watchdog('uc_econt', '@json', array('@json' => json_encode($data_quarter)), WATCHDOG_NOTICE);
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'batch_import_data_finished',
+  );
+  
+  return $batch;
+}
+
+/**
+ * Batch operation for batch quarters
+ */
+function batch_import_data_op_quarters($data_quarter, &$context) {
+  $vals = array();
+  
+  //watchdog('uc_econt', '@json', array('@json' => json_encode($data_quarter)), WATCHDOG_NOTICE);
+  
+  foreach ($data_quarter as $key => $val) {
+    $vals[] = '\'' . $val . '\'';
+  }
+  
+  $name_val_arr = array(
+    //'id' => $vals[0],
+    "name=$vals[1]",
+    "name_en=$vals[2]",
+    "city_post_code=$vals[3]",
+    "id_city=$vals[4]"
+  );
+  
+  $id = str_replace('\'', '', $vals[0]);
+  $exist = db_result(db_query("SELECT id FROM {uc_econt_quarters} WHERE id=%d", $id));
+  
+  if ($exist) {
+    $name_val_list = implode(',', $name_val_arr);
+    //update row
+    db_query("UPDATE {uc_econt_quarters} SET " . $name_val_list . " WHERE id=%d", $id);
+  }
+  else {
+    $values = implode(', ', $vals);
+    //insert
+    db_query("INSERT INTO {uc_econt_quarters} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
+  }
+}
+
+function batch_import_data_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we could do something meaningful with the results.
+    // We just display the number of nodes we processed...
+    $message = count($results) . ' processed.';
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = 'An error occurred while processing ' . $error_operation[0] . ' with arguments :' . print_r($error_operation[0], TRUE);
+  }
+  drupal_set_message($message);
 }
 
 //store admin oreder sipping econt
@@ -546,39 +692,69 @@ function _delivery_weight($arg1) {
   return $delivery_weight;
 }
 
-//download remote data for cities, streets,quarters, offices in separated files
+//page: download remote data for cities, streets,quarters, offices in separated files
 function _econt_data_download() {
+  
   $output = '';
   
-  $output = 'download remote data for cities, streets,quarters, offices in separated files';
+  $output = 'download remote data for cities, streets,quarters, offices in separated files<p>';
   
-  //include_once('include/uc_econt.xml_query_application_delivery.inc');
+  $output .= drupal_get_form('dw_tbl_data_form');
   
-  $file_to_send = drupal_get_path('module', 'uc_econt') . '/include/get_cities_query.xml';
-  $eecont_tool_url = _eecont_url();
+  return $output;
+}
+
+function dw_tbl_data_form() {
+  $form = array();
   
+  $data_type = array('cities' => 'cities', 'offices' => 'offices', 'streets' => 'streets', 'quarters' => 'quarters');
+  
+  $form['start_dw'] = array(
+    '#type' => 'select',
+    '#options' => $data_type,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Run',
+  );
+
+  return $form;
+}
+
+function dw_tbl_data_form_submit($form, &$form_state) {
+  global $user;
+  
+  $type = $form_state['values']['start_dw'];
+  
+  include_once('include/uc_econt.xml_get_' . $type . '.inc');
+  $sentTmpFileName = file_directory_temp() . '/get_' . $type . '_' . $user -> uid . '.xml';
+  file_put_contents($sentTmpFileName, $xmlStr);
+  $eecont_url = _eecont_url();
+  //1 is tool url
   $ch = curl_init($eecont_url[1]); //!!!!! _ 
-  curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$file_to_send"));
+  curl_setopt($ch, CURLOPT_POSTFIELDS, array('file' => "@$sentTmpFileName"));
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 30);
   $responseResult = curl_exec($ch);
   $info = curl_getinfo($ch);
   $curl_error = curl_error($ch);
   curl_close($ch);
-  
-  //watchdog('uc_econt', '@xmlStr', array('@xmlStr' => $responseResult), WATCHDOG_NOTICE);
-  //drupal_set_message($xmlStr);
-  
-  if ($responseResult) {
+    
+  //drupal_set_message($eecont_url[1]);
+
+  if ($responseResult || $curl_error) {
+    //dsm($responseResult);
     //filepath
-    $sTmpFileName =  file_directory_path() . '/data/offices.xml';
+    $sTmpFileName =  file_directory_temp() . '/' . $type . '.xml';
     //create file
     file_put_contents($sTmpFileName, $responseResult);
     
-    $output .= $responseResult;
+    if ($sTmpFileName) {
+      $newfile = file_directory_path() . '/' . $type . '.xml';
+      copy($sTmpFileName, $newfile);
+    }
   }
-  
-  return $output;
 }
 
 include_once('include/funcs.inc.php');

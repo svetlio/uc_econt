@@ -29,12 +29,12 @@
     
       $username = $doc -> createElement('username');
       $username = $client->appendChild($username);
-      $username_val = $doc->createTextNode('demo');
+      $username_val = $doc->createTextNode(variable_get('uc_econt_e_econt_client_username', 'demo'));
       $username_val = $username->appendChild($username_val);
       
       $password = $doc -> createElement('password');
       $password = $client->appendChild($password);
-      $password_val = $doc->createTextNode('demo');
+      $password_val = $doc->createTextNode(variable_get('uc_econt_e_econt_client_passwd', 'demo'));
       $password_val = $password->appendChild($password_val);
       
     $request_type = $doc -> createElement('request_type');
