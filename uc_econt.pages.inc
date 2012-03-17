@@ -48,22 +48,6 @@ function _econt_shipping_reports() {
   $streets_exist = db_result(db_query("SELECT COUNT(name) FROM {uc_econt_streets}"));
   $offices_exist = db_result(db_query("SELECT COUNT(id) FROM {uc_econt_offices}"));
 */
-
-  
-  if (file_exists($file_streets) && !$streets_exist) {
-    $xml = simplexml_load_file($file_streets, 'SimpleXMLElement', LIBXML_NOCDATA);
-    $p_cnt = count($xml->cities_street->e);
-    //$page_content .= $p_cnt . ' streets<p>';
-    $data = amstore_xmlobj2array($xml, 2);
-    for($i = 1; $i < $p_cnt; $i++) {
-      $vals = array();
-      foreach ($data['cities_street']['cities_street'][$i] as $key => $val) {
-        $vals[] = '\'' . $val . '\'';
-        $values = implode(', ', $vals);
-      }
-      db_query("INSERT INTO {uc_econt_streets} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
-    }
-  }
   
   if (file_exists($file_offices) && !$offices_exist) {
     $xml = simplexml_load_file($file_offices, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -199,26 +183,11 @@ function batch_import_quarters($filename) {
     $data_quarter = $data['cities_quarters']['cities_quarters'][$i];
     $operations[] = array('batch_import_data_op_quarters', array($data_quarter));
     
-    watchdog('uc_econt', '@json', array('@json' => json_encode($data_quarter)), WATCHDOG_NOTICE);
-  }
-  $batch = array(
-    'operations' => $operations,
-    'finished' => 'batch_import_data_finished',
-  );
-  
-  return $batch;
-}
+    //watchdog('uc_econt', '@json', array('@json' => $data_quarter['id']), WATCHDOG_NOTICE);
+    $vals = array();
 
-/**
- * Batch operation for batch quarters
- */
-function batch_import_data_op_quarters($data_quarter, &$context) {
-  $vals = array();
-  
-  //watchdog('uc_econt', '@json', array('@json' => json_encode($data_quarter)), WATCHDOG_NOTICE);
-  
   foreach ($data_quarter as $key => $val) {
-    $vals[] = '\'' . $val . '\'';
+    $vals[] = '\'' . $val . '\'';  
   }
   
   $name_val_arr = array(
@@ -241,6 +210,119 @@ function batch_import_data_op_quarters($data_quarter, &$context) {
     $values = implode(', ', $vals);
     //insert
     db_query("INSERT INTO {uc_econt_quarters} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
+  }
+  }
+  
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'batch_import_data_finished',
+  );
+  
+  //watchdog('uc_econt', '@json', array('@json' => json_encode($data_quarter)), WATCHDOG_NOTICE);
+  
+  return $batch;
+}
+
+/**
+ * Batch operation for batch quarters
+ */
+function batch_import_data_op_quarters($data_quarter, &$context) {
+  $vals = array();
+
+  foreach ($data_quarter as $key => $val) {
+    $vals[] = '\'' . $val . '\'';  
+  }
+  
+  $name_val_arr = array(
+    //'id' => $vals[0],
+    "name=$vals[1]",
+    "name_en=$vals[2]",
+    "city_post_code=$vals[3]",
+    "id_city=$vals[4]"
+  );
+  
+  $id = str_replace('\'', '', $vals[0]);
+  $exist = db_result(db_query("SELECT id FROM {uc_econt_quarters} WHERE id=%d", $id));
+  
+  if ($exist) {
+    $name_val_list = implode(',', $name_val_arr);
+    //update row
+    db_query("UPDATE {uc_econt_quarters} SET " . $name_val_list . " WHERE id=%d", $id);
+  }
+  else {
+    $values = implode(', ', $vals);
+    //insert
+    db_query("INSERT INTO {uc_econt_quarters} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
+  }
+}
+
+/**
+ * Batch streets update
+ */
+function batch_import_streets($filename) {
+  /*
+  if (file_exists($file_streets) && !$streets_exist) {
+    $xml = simplexml_load_file($file_streets, 'SimpleXMLElement', LIBXML_NOCDATA);
+    $p_cnt = count($xml->cities_street->e);
+    //$page_content .= $p_cnt . ' streets<p>';
+    $data = amstore_xmlobj2array($xml, 2);
+    for($i = 1; $i < $p_cnt; $i++) {
+      $vals = array();
+      foreach ($data['cities_street']['cities_street'][$i] as $key => $val) {
+        $vals[] = '\'' . $val . '\'';
+        $values = implode(', ', $vals);
+      }
+      db_query("INSERT INTO {uc_econt_streets} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
+    }
+  }
+  */
+  $xml = simplexml_load_file($filename, 'SimpleXMLElement', LIBXML_NOCDATA);
+  $p_cnt = count($xml->cities_street->e);
+  $data = amstore_xmlobj2array($xml, 2);
+  
+  $operations = array();
+  for ($i = 0; $i < $p_cnt; $i++) {
+    $data_street = $data['cities_street']['cities_street'][$i];
+    $operations[] = array('batch_import_data_op_streets', array($data_street));
+  }
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'batch_import_data_finished',
+  );
+  
+  return $batch;
+}
+
+/**
+ * Batch operation for batch streets
+ */
+function batch_import_data_op_streets($data_street, &$context) {
+  $vals = array();
+  
+  foreach ($data_street as $key => $val) {
+    $vals[] = '\'' . $val . '\'';
+  }
+  
+  $name_val_arr = array(
+    //'id' => $vals[0],
+    "name=$vals[1]",
+    "name_en=$vals[2]",
+    "city_post_code=$vals[3]",
+    "id_city=$vals[4]",
+  );
+  
+  $id = str_replace('\'', '', $vals[0]);
+  $exist = db_result(db_query("SELECT id FROM {uc_econt_streets} WHERE id=%d", $id));
+  
+  if ($exist) {
+    $name_val_list = implode(',', $name_val_arr);
+    //update row
+    db_query("UPDATE {uc_econt_streets} SET " . $name_val_list . " WHERE id=%d", $id);
+  }
+  else {
+    $values = implode(', ', $vals);
+    //insert
+    db_query("INSERT INTO {uc_econt_streets} (id, name, name_en, city_post_code, id_city) VALUES(" . $values . ")");
   }
 }
 
